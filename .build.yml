@@ -5,8 +5,8 @@ sources:
 - https://git.sr.ht/~glesica/pkgraph
 tasks:
 - setup: |
-    cd receptor
+    cd pkgraph
     pub get
 - check: |
-    cd receptor
+    cd pkgraph
     sh scripts/check.sh
