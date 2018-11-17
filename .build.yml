@@ -1,0 +1,12 @@
+image: archlinux
+packages:
+- dart
+sources:
+- https://git.sr.ht/~glesica/pkgraph
+tasks:
+- setup: |
+    cd receptor
+    pub get
+- check: |
+    cd receptor
+    sh scripts/check.sh
