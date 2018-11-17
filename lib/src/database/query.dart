@@ -14,8 +14,6 @@ class Query {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      "statements": _statements.map((s) => s.toJson()).toList()
-    };
+    return {"statements": _statements.map((s) => s.toJson()).toList()};
   }
 }

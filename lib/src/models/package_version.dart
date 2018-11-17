@@ -45,6 +45,7 @@ class PackageVersion {
   @JsonKey(fromJson: _toVersion)
   final Version version;
 
+  // TODO: It's unfortunate that we have to expose this publicly
   PackageVersion({
     @required this.author,
     @required this.authors,
@@ -52,9 +53,9 @@ class PackageVersion {
     @required this.description,
     @required this.homepage,
     @required this.name,
-    @required int ordinal,
+    int ordinal,
     @required this.sdk,
-    @required String source,
+    String source,
     @required this.version,
   })  : _ordinal = ordinal,
         _source = source;
@@ -93,6 +94,9 @@ class PackageVersion {
   /// in the graph to which the package version will be attached.
   @JsonKey(ignore: true)
   String get source => _source;
+
+  @override
+  String toString() => '$source/$name @ $version';
 }
 
 Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {

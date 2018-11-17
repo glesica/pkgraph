@@ -4,19 +4,27 @@ import 'dart:convert' show json;
 import 'package:http/http.dart' as http;
 
 import 'package:pkgraph/src/models/package_version.dart';
+import 'package:pkgraph/src/pub/cache.dart';
 
 const defaultSource = 'pub.dartlang.org';
 const packageEndpoint = '/api/packages/';
 
+final defaultCache = Cache();
+
 /// Fetch all versions of the given package from the given source
 /// (pub server).
-///
-/// TODO: Consider caching results to allow repeat calls
 Future<Iterable<PackageVersion>> fetchPackageVersions(
   String packageName, {
-  bool https: true,
-  String source: defaultSource,
+  Cache cache,
+  bool https = true,
+  String source = defaultSource,
 }) async {
+  assert(packageName != null);
+  assert(https != null);
+  assert(source != null);
+
+  cache ??= defaultCache;
+
   final url =
       '${https ? 'https' : 'http'}://$source$packageEndpoint$packageName';
   final response = await http.get(url);
@@ -27,9 +35,18 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
   for (int i = 0; i < jsonVersions.length; i++) {
     final jsonVersion = jsonVersions[i] as Map<String, dynamic>;
     final pubspec = jsonVersion['pubspec'] as Map<String, dynamic>;
-    packageVersions
-        .add(PackageVersion.fromJson(pubspec, ordinal: null, source: source));
+    packageVersions.add(PackageVersion.fromJson(
+      pubspec,
+      ordinal: null,
+      source: source,
+    ));
   }
+
+  cache.set(
+    source: source,
+    packageName: packageName,
+    packageVersions: packageVersions,
+  );
 
   return packageVersions;
 }
