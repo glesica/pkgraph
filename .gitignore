@@ -48,7 +48,6 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
-
 ### Dart ###
 # Don’t commit the following directories created by pub.
 .buildlog
@@ -63,4 +62,8 @@ packages
 *.js_
 *.js.deps
 *.js.map
+
+### Project ###
+
+data/
 
