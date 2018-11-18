@@ -1,10 +1,14 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/dependency.dart';
 
 part 'package_version.g.dart';
+
+final _logger = Logger('package_version.dart');
 
 /// A model that represents a specific version of a particular package.
 @JsonSerializable(nullable: false)
@@ -13,11 +17,13 @@ class PackageVersion {
   /// the plural in the pubspec.
   ///
   /// TODO: Use this in place of the plural version if it is set
+  @JsonKey(defaultValue: '', nullable: true)
   final String author;
 
   /// The list of author strings for this version.
   ///
   /// TODO: Think about parsing the author strings themselves
+  @JsonKey(defaultValue: const [], nullable: true)
   final Iterable<String> authors;
 
   /// The list of dependencies for this version.
@@ -28,6 +34,7 @@ class PackageVersion {
   final String description;
 
   /// The URI of the package's homepage.
+  @JsonKey(nullable: true)
   final Uri homepage;
 
   /// Package name. Should not change across versions.
@@ -100,21 +107,62 @@ class PackageVersion {
 }
 
 Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
-  // TODO: Handle git dependencies
-  // TODO: Handle path dependencies (somehow)
-  // TODO: Handle dependencies on custom pub servers
+  // TODO: Handle git dependencies https://www.dartlang.org/tools/pub/dependencies#git-packages
+  // TODO: Handle SDK dependencies https://www.dartlang.org/tools/pub/dependencies#sdk
+  // TODO: Make sure there's no reason to use the "inner" hosted package name
   if (value == null) {
-    return [];
+    return const [];
   }
 
-  return value.entries.map((entry) {
-    final constraint = VersionConstraint.parse(entry.value as String);
-    final name = entry.key;
-    return Dependency(constraint: constraint, name: name);
-  });
-}
+  final dependencies = <Dependency>[];
+  for (final entry in value.entries) {
+    _logger.fine('parsing dependency: $entry');
 
-Version _toVersion(String value) => Version.parse(value);
+    final entryKey = entry.key;
+    final entryValue = entry.value;
+
+    String constraint;
+    String source;
+
+    if (entryValue is Map<String, dynamic>) {
+      if (entryValue.containsKey('version') &&
+          entryValue.containsKey('hosted')) {
+        // Handle a hosted dependency from a non-default pub server, example:
+        // dependencies:
+        //   transmogrify:
+        //     hosted:
+        //       name: transmogrify
+        //       url: http://your-package-server.com
+        //     version: ^1.4.0
+        constraint = entryValue['version'] as String ?? 'any';
+        source = entryValue['hosted']['url'] as String;
+      } else {
+        // There's a weird older schema that looks like this, just skip it.
+        // dependencies:
+        //   unittest
+        //     sdk: unittest
+        if (entryValue.containsKey('sdk')) {
+          _logger.warning('skipping dependency $entry');
+          continue;
+        }
+      }
+    } else {
+      // Handle a hosted dependency from the default pub server, example:
+      // dependencies:
+      //   transmogrify: ^1.4.0
+      constraint = entryValue as String ?? 'any';
+      source = defaultSource;
+    }
+
+    dependencies.add(Dependency(
+      constraint: VersionConstraint.parse(constraint),
+      name: entryKey,
+      source: source,
+    ));
+  }
+
+  return dependencies;
+}
 
 VersionConstraint _toSdk(Map<String, dynamic> value) {
   if (value == null) {
@@ -123,3 +171,5 @@ VersionConstraint _toSdk(Map<String, dynamic> value) {
 
   return VersionConstraint.parse(value['sdk'] as String);
 }
+
+Version _toVersion(String value) => Version.parse(value);

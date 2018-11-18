@@ -7,6 +7,7 @@ import 'package:pkgraph/src/cypher/author.dart';
 import 'package:pkgraph/src/cypher/package.dart';
 import 'package:pkgraph/src/database/database.dart';
 import 'package:pkgraph/src/database/query.dart';
+import 'package:pkgraph/src/pub/cache.dart';
 import 'package:pkgraph/src/pub/fetch.dart';
 
 final _logger = Logger('pkgraph.dart');
@@ -21,21 +22,23 @@ Future<void> main(List<String> arguments) async {
   final constraintsQuery = Query()
     ..add(authorConstraintStatement())
     ..add(sourceConstraintStatement());
-  final constraintsSuccess = await database.commit(constraintsQuery);
-  if (!constraintsSuccess) {
-    exit(1);
-  }
+  await database.commit(constraintsQuery);
 
-  final packageVersions = await fetchPackageVersions('state_machine');
-  for (final packageVersion in packageVersions) {
+  await populatePackagesCache('state_machine');
+
+  for (final packageVersion in defaultCache.all()) {
     _logger.info('loading $packageVersion');
-    final query = Query()
+    final packageQuery = Query()
       ..add(packageVersionStatement(packageVersion))
       ..addAll(packageAuthorStatements(packageVersion));
-    final success = await database.commit(query);
-    if (!success) {
-      exit(1);
-    }
+    await database.commit(packageQuery);
+  }
+
+  for (final packageVersion in defaultCache.all()) {
+    _logger.info('loading dependencies for $packageVersion');
+    final dependencyQuery = Query()
+      ..addAll(packageDependenciesStatements(packageVersion));
+    await database.commit(dependencyQuery);
   }
 
   exit(0);

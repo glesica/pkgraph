@@ -3,34 +3,57 @@ import 'dart:collection';
 import 'dart:convert' show json;
 
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
+import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 import 'package:pkgraph/src/pub/cache.dart';
 
-const defaultSource = 'pub.dartlang.org';
-const packageEndpoint = '/api/packages/';
-
-final defaultCache = Cache();
+final _logger = Logger('fetch.dart');
 
 /// Fetch all versions of the given package from the given source
 /// (pub server).
+///
+/// TODO: Use a `Uri` for the source instead of a string
 Future<Iterable<PackageVersion>> fetchPackageVersions(
   String packageName, {
   Cache cache,
-  bool https = true,
   String source = defaultSource,
 }) async {
   assert(packageName != null);
-  assert(https != null);
   assert(source != null);
 
   cache ??= defaultCache;
 
-  final url =
-      '${https ? 'https' : 'http'}://$source$packageEndpoint$packageName';
+  if (cache.contains(
+    packageName: packageName,
+    source: source,
+  )) {
+    _logger.info('cache hit on $packageName from $source');
+    return cache.get(packageName: packageName, source: source);
+  }
+
+  // Not sure what the rate limit looks like on the public pub server so
+  // we'll do this just in case.
+  // TODO: Make this user-configurable
+  await Future.delayed(Duration(seconds: 1));
+
+  final url = '$source$packageEndpoint$packageName';
+
+  _logger.info('requesting $url');
   final response = await http.get(url);
+  _logger.fine('response body from $url: ${response.body}');
+
+  // TODO: Deal with various non-200 status codes more intelligently
+  if (response.statusCode != 200) {
+    _logger.warning('received ${response.statusCode} from $url');
+    // TODO: Consider unwinding the whole fetch and skipping the root package
+    return const [];
+  }
+
   final jsonBody = json.decode(response.body);
   final jsonVersions = jsonBody['versions'] as List<dynamic>;
+  _logger.info('loading ${jsonVersions.length} versions from $url');
 
   final packageVersions = <PackageVersion>[];
   for (int i = 0; i < jsonVersions.length; i++) {
@@ -38,72 +61,59 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
     final pubspec = jsonVersion['pubspec'] as Map<String, dynamic>;
     packageVersions.add(PackageVersion.fromJson(
       pubspec,
-      ordinal: null,
+      ordinal: i,
       source: source,
     ));
   }
 
   cache.set(
-    source: source,
     packageName: packageName,
+    source: source,
     packageVersions: packageVersions,
   );
 
   return packageVersions;
 }
 
-Future<Iterable<PackageVersion>> recursiveFetchPackageVersions(
+/// Recursively populate a [Cache] starting at the given package.
+Future<void> populatePackagesCache(
   String packageName, {
   Cache cache,
-  bool https = true,
   String source = defaultSource,
 }) async {
   assert(packageName != null);
-  assert(https != null);
   assert(source != null);
-
-  final packageVersions = <PackageVersion>[];
 
   final packageQueue = Queue.of([_QueuedPackage(packageName, source)]);
   final packagesSeen = Set<_QueuedPackage>();
 
   while (packageQueue.isNotEmpty) {
-    final nextQueuePackage = packageQueue.removeFirst();
+    final nextQueuedPackage = packageQueue.removeFirst();
 
     // Check if we've seen this one before, if so, we're good to go,
     // if not, record it and move on.
-    if (packagesSeen.contains(nextQueuePackage)) {
+    if (packagesSeen.contains(nextQueuedPackage)) {
       continue;
     }
-    packagesSeen.add(nextQueuePackage);
+    packagesSeen.add(nextQueuedPackage);
 
     final nextPackageVersions = await fetchPackageVersions(
-      nextQueuePackage.packageName,
+      nextQueuedPackage.packageName,
       cache: cache,
-      https: https,
-      source: nextQueuePackage.source,
+      source: nextQueuedPackage.source,
     );
 
+    // Queue up all package dependencies. Those that have already been
+    // fetched will be skipped when they pop up.
     for (final nextPackageVersion in nextPackageVersions) {
-      packageVersions.add(nextPackageVersion);
-
-      // Should we just hydrate the PackageVersion object with enough
-      // info about its dependencies to create relationships and not
-      // worry about hitting all the package versions up front? Either
-      // way this approach won't give us enough information to actually
-      // compute which dependency versions we should have relationships
-      // to because we're just going to end up with a flat list.
-
-      // Queue up dependencies
-      nextPackageVersion.dependencies.forEach((dependency) {
-        final nextQueueDependency = _QueuedPackage(dependency.name, );
-      });
+      for (final dependency in nextPackageVersion.dependencies) {
+        packageQueue.add(_QueuedPackage(dependency.name, dependency.source));
+      }
     }
   }
-
-  return packageVersions;
 }
 
+/// A package waiting to be fetched.
 class _QueuedPackage {
   final String packageName;
   final String source;

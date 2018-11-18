@@ -3,8 +3,10 @@ import 'dart:convert' show json, utf8;
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 import 'package:pkgraph/src/database/query.dart';
+import 'package:pkgraph/src/database/retry.dart';
 
 const commitEndpoint = '/db/data/transaction/commit';
 const defaultHost = 'localhost';
@@ -31,30 +33,69 @@ class Database {
 
   /// Open and immediately commit a transaction with the given query.
   ///
-  /// TODO: Handle failure more sensibly
+  /// TODO: Real response processing and error handling
   /// TODO: Should we re-use the HTTP client?
-  Future<bool> commit(
+  Future<void> commit(
     Query query, {
     String endpoint = commitEndpoint,
   }) async {
     final client = HttpClient();
 
     final uri = Uri.parse('$baseUrl$commitEndpoint');
-    _logger.info('uri $uri');
+    _logger.info('using database at $uri');
 
-    final request = await client.postUrl(uri);
-    request.headers
-      ..add('Accept', 'application/json; charset=utf-8')
-      ..contentType = ContentType('application', 'json', charset: 'utf-8');
-    request.write(json.encode(query.toJson()));
+    HttpClientRequest request;
+    String requestPayload;
+    await runWithRetry(
+      operation: () async {
+        request = await client.postUrl(uri);
+        request.headers
+          ..add('Accept', 'application/json; charset=utf-8')
+          ..contentType = ContentType('application', 'json', charset: 'utf-8');
+        requestPayload = json.encode(query.toJson());
+        _logger.fine('request payload:\n$requestPayload');
+        request.write(requestPayload);
+      },
+      retries: 3,
+    );
 
     final response = await request.close();
-    _logger.info('status ${response.statusCode}');
+    _logger.info('response status code: ${response.statusCode}');
+    final responsePayload = await response.transform(utf8.decoder).join();
+    _logger.fine('response payload:\n$responsePayload');
+    final responseJson = json.decode(responsePayload);
 
-    final responseBody =
-        await response.transform(utf8.decoder).transform(json.decoder).join();
-    _logger.info('$responseBody');
+    if (responseJson is! Map<String, dynamic> ||
+        (responseJson['errors'] as List).isNotEmpty) {
+      throw DbException(
+        request: requestPayload,
+        response: responsePayload,
+        statusCode: response.statusCode,
+        uri: uri,
+      );
+    }
 
-    return response.statusCode == 200;
+    _logger.info('successful response from $uri');
   }
+}
+
+class DbException implements Exception {
+  final String request;
+
+  final String response;
+
+  final int statusCode;
+
+  final Uri uri;
+
+  DbException({
+    @required this.response,
+    @required this.request,
+    @required this.statusCode,
+    @required this.uri,
+  });
+
+  @override
+  String toString() =>
+      'DbException ($statusCode from $uri)\n\nrequest:\n$request\n\nresponse:\n$response';
 }
