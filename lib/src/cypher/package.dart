@@ -1,3 +1,4 @@
+import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/database/statement.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 import 'package:pkgraph/src/pub/cache.dart';
@@ -24,6 +25,8 @@ Statement packageVersionStatement(PackageVersion package) =>
             v.patch = {patch},
             v.build = {build},
             v.preRelease = {preRelease},
+            v.dart1 = {dart1},
+            v.dart2 = {dart2},
             v.homepage = {homepage}
     ''')
       ..set('source', package.source)
@@ -35,6 +38,8 @@ Statement packageVersionStatement(PackageVersion package) =>
       ..set('patch', package.patch)
       ..set('build', package.build)
       ..set('preRelease', package.preRelease)
+      ..set('dart1', package.sdk.allowsAny(dart1Versions))
+      ..set('dart2', package.sdk.allowsAny(dart2Versions))
       ..set('homepage', package.homepage?.toString() ?? '');
 
 /// Create statements to insert dependency edges for all dependencies
@@ -73,7 +78,7 @@ Iterable<Statement> packageDependenciesStatements(
                 (dp:Package {name: {depPackage}})-[:HAS_VERSION]->
                 (dv:Version {version: {depVersion}})
           MERGE (v)-[:MAY_USE]->(dv)
-          ''')
+      ''')
         ..set('source', package.source)
         ..set('package', package.name)
         ..set('version', package.version.toString())

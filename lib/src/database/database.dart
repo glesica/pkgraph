@@ -42,7 +42,6 @@ class Database {
     final client = HttpClient();
 
     final uri = Uri.parse('$baseUrl$commitEndpoint');
-    _logger.info('using database at $uri');
 
     HttpClientRequest request;
     String requestPayload;
@@ -60,7 +59,7 @@ class Database {
     );
 
     final response = await request.close();
-    _logger.info('response status code: ${response.statusCode}');
+    _logger.fine('response status code: ${response.statusCode}');
     final responsePayload = await response.transform(utf8.decoder).join();
     _logger.fine('response payload:\n$responsePayload');
     final responseJson = json.decode(responsePayload);

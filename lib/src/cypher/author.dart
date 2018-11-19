@@ -19,7 +19,7 @@ Iterable<Statement> packageAuthorStatements(PackageVersion package) =>
               (p:Package {name: {package}})-[:HAS_VERSION]->
               (v:Version {version: {version}})<-[:HAS_VERSION]-(p)
         MERGE (v)-[:HAS_AUTHOR]->(a:Author {name: {author}})
-        ''')
+    ''')
       ..set('source', package.source)
       ..set('package', package.name)
       ..set('version', package.version.toString())
