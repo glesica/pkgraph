@@ -9,6 +9,9 @@ import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 import 'package:pkgraph/src/pub/cache.dart';
 
+/// Packages endpoint for a pub server.
+const packageEndpoint = '/api/packages/';
+
 final _logger = Logger('fetch.dart');
 
 /// Fetch all versions of the given package from the given source

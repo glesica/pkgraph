@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
+
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/cypher/author.dart';
-
 import 'package:pkgraph/src/cypher/package.dart';
 import 'package:pkgraph/src/database/database.dart';
 import 'package:pkgraph/src/database/query.dart';
@@ -22,9 +22,33 @@ Future<void> main(List<String> args) async {
   final argParser = ArgParser()
     ..addFlag(
       'help',
+      abbr: 'h',
       help: 'Display help',
       negatable: false,
     )
+    ..addOption(
+      'neo4j-host',
+      help: 'Neo4j host',
+      defaultsTo: defaultHost,
+    )
+    ..addFlag(
+      'neo4j-https',
+      help: 'Use HTTPS to connect to Neo4j',
+      defaultsTo: false,
+      negatable: false,
+    )
+    ..addOption('neo4j-port',
+        help: 'Neo4j port',
+        defaultsTo: defaultPort.toString(), callback: (value) {
+      final parsedValue = int.tryParse(value);
+      if (parsedValue == null || parsedValue < 1) {
+        throw ArgumentError.value(
+          value,
+          'neo4j-port',
+          'A positive integer is required',
+        );
+      }
+    })
     ..addOption(
       'source',
       abbr: 's',
@@ -67,17 +91,16 @@ Future<void> main(List<String> args) async {
   // Insert packages
   for (final packageVersion in defaultCache.all()) {
     _logger.info('loading $packageVersion');
-    final packageQuery = Query()
-      ..add(packageVersionStatement(packageVersion));
+    final packageQuery = Query()..add(packageVersionStatement(packageVersion));
     await database.commit(packageQuery);
   }
 
   // Insert authors
   for (final packageVersion in defaultCache.all()) {
-  _logger.info('loading $packageVersion');
-  final packageQuery = Query()
-  ..addAll(packageAuthorStatements(packageVersion));
-  await database.commit(packageQuery);
+    _logger.info('loading $packageVersion');
+    final packageQuery = Query()
+      ..addAll(packageAuthorStatements(packageVersion));
+    await database.commit(packageQuery);
   }
 
   // Insert dependency relationships

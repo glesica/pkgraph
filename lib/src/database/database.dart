@@ -5,12 +5,11 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
+import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/database/query.dart';
 import 'package:pkgraph/src/database/retry.dart';
 
 const commitEndpoint = '/db/data/transaction/commit';
-const defaultHost = 'localhost';
-const defaultPort = 7474;
 
 final _logger = Logger('database.dart');
 
