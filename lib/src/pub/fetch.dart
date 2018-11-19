@@ -53,7 +53,7 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
 
   final jsonBody = json.decode(response.body);
   final jsonVersions = jsonBody['versions'] as List<dynamic>;
-  _logger.info('loading ${jsonVersions.length} versions from $url');
+  _logger.info('fetching ${jsonVersions.length} versions from $url');
 
   final packageVersions = <PackageVersion>[];
   for (int i = 0; i < jsonVersions.length; i++) {

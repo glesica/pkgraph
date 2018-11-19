@@ -15,17 +15,17 @@ Statement sourceConstraintStatement() => Statement(
 Statement packageVersionStatement(PackageVersion package) =>
     Statement(statement: '''
         MERGE (s:Source {url: {source}})
-        MERGE (p:Package {name: {package}})
-        MERGE (v:Version {version: {version}})
-          SET v.ordinal = {ordinal},
-              v.major = {major},
-              v.minor = {minor},
-              v.patch = {patch},
-              v.build = {build},
-              v.preRelease = {preRelease},
-              v.homepage = {homepage}
-        MERGE (p)-[:HOSTED_ON]->(s)
-        MERGE (p)-[:HAS_VERSION]->(v);''')
+        MERGE (s)<-[:HOSTED_ON]-(p:Package {name: {package}, source_url: {source}})
+        MERGE (p)-[:HAS_VERSION]->(v:Version {version: {version}, package_name: {package}})
+          ON CREATE SET
+            v.ordinal = {ordinal},
+            v.major = {major},
+            v.minor = {minor},
+            v.patch = {patch},
+            v.build = {build},
+            v.preRelease = {preRelease},
+            v.homepage = {homepage}
+    ''')
       ..set('source', package.source)
       ..set('package', package.name)
       ..set('version', package.version.toString())
@@ -43,8 +43,6 @@ Statement packageVersionStatement(PackageVersion package) =>
 /// This function relies heavily on the cache, either the one passed in
 /// or the default cache. If any of the dependent packages is missing
 /// from the cache, it will throw.
-///
-/// TODO: This should error if dependencies haven't been added yet
 Iterable<Statement> packageDependenciesStatements(
   PackageVersion package, {
   Cache cache,
@@ -55,7 +53,7 @@ Iterable<Statement> packageDependenciesStatements(
 
   final statements = <Statement>[];
   for (final dependency in package.dependencies) {
-    // Filter package versions to only compatible
+    // Filter package versions to only those that match the constraint.
     final dependencyVersions = cache
         .get(
           packageName: dependency.packageName,
@@ -68,14 +66,14 @@ Iterable<Statement> packageDependenciesStatements(
       // package version and the dependent package version as shown.
       // (package:Version)-[:MAY_USE]->(dependency:Version)
       final statement = Statement(statement: '''
-          MATCH (s:Source {url: {source}}),
-                (p:Package {name: {package}})-[:HOSTED_ON]->(s),
-                (v:Version {version: {version}})<-[:HAS_VERSION]-(p),
-                (ds:Source {url: {depSource}}),
-                (dp:Package {name: {depPackage}})-[:HOSTED_ON]->(ds),
-                (dv:Version {version: {depVersion}})<-[:HAS_VERSION]-(dp)
+          MATCH (s:Source {url: {source}})<-[:HOSTED_ON]-
+                (p:Package {name: {package}})-[:HAS_VERSION]->
+                (v:Version {version: {version}}),
+                (ds:Source {url: {depSource}})<-[:HOSTED_ON]-
+                (dp:Package {name: {depPackage}})-[:HAS_VERSION]->
+                (dv:Version {version: {depVersion}})
           MERGE (v)-[:MAY_USE]->(dv)
-      ''')
+          ''')
         ..set('source', package.source)
         ..set('package', package.name)
         ..set('version', package.version.toString())

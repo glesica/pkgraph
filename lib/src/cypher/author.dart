@@ -15,11 +15,11 @@ Statement authorConstraintStatement() => Statement(
 /// relationship between each author and the Version node.
 Iterable<Statement> packageAuthorStatements(PackageVersion package) =>
     package.authors.map((author) => Statement(statement: '''
-        MATCH (s:Source {url: {source}}),
-              (p:Package {name: {package}})-[:HOSTED_ON]->(s),
+        MATCH (s:Source {url: {source}})<-[:HOSTED_ON]-
+              (p:Package {name: {package}})-[:HAS_VERSION]->
               (v:Version {version: {version}})<-[:HAS_VERSION]-(p)
-        MERGE (a:Author {name: {author}})
-        MERGE (v)-[:HAS_AUTHOR]->(a);''')
+        MERGE (v)-[:HAS_AUTHOR]->(a:Author {name: {author}})
+        ''')
       ..set('source', package.source)
       ..set('package', package.name)
       ..set('version', package.version.toString())

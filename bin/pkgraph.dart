@@ -64,14 +64,23 @@ Future<void> main(List<String> args) async {
     ..add(sourceConstraintStatement());
   await database.commit(constraintsQuery);
 
+  // Insert packages
   for (final packageVersion in defaultCache.all()) {
     _logger.info('loading $packageVersion');
     final packageQuery = Query()
-      ..add(packageVersionStatement(packageVersion))
-      ..addAll(packageAuthorStatements(packageVersion));
+      ..add(packageVersionStatement(packageVersion));
     await database.commit(packageQuery);
   }
 
+  // Insert authors
+  for (final packageVersion in defaultCache.all()) {
+  _logger.info('loading $packageVersion');
+  final packageQuery = Query()
+  ..addAll(packageAuthorStatements(packageVersion));
+  await database.commit(packageQuery);
+  }
+
+  // Insert dependency relationships
   for (final packageVersion in defaultCache.all()) {
     _logger.info('loading dependencies for $packageVersion');
     final dependencyQuery = Query()
