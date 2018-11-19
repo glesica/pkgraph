@@ -42,26 +42,30 @@ class Database {
 
     final uri = Uri.parse('$baseUrl$commitEndpoint');
 
-    HttpClientRequest request;
     String requestPayload;
+    HttpClientResponse response;
+    String responsePayload;
+    dynamic responseJson;
     await runWithRetry(
       operation: () async {
-        request = await client.postUrl(uri);
+        final request = await client.postUrl(uri);
         request.headers
           ..add('Accept', 'application/json; charset=utf-8')
           ..contentType = ContentType('application', 'json', charset: 'utf-8');
         requestPayload = json.encode(query.toJson());
         _logger.fine('request payload:\n$requestPayload');
         request.write(requestPayload);
+
+        // TODO: This is an experiment because sometimes close() throws
+        response = await request.close();
+        _logger.fine('response status code: ${response.statusCode}');
+        responsePayload = await response.transform(utf8.decoder).join();
+        _logger.fine('response payload:\n$responsePayload');
+
+        responseJson = json.decode(responsePayload);
       },
       retries: 5,
     );
-
-    final response = await request.close();
-    _logger.fine('response status code: ${response.statusCode}');
-    final responsePayload = await response.transform(utf8.decoder).join();
-    _logger.fine('response payload:\n$responsePayload');
-    final responseJson = json.decode(responsePayload);
 
     if (responseJson is! Map<String, dynamic> ||
         (responseJson['errors'] as List).isNotEmpty) {
