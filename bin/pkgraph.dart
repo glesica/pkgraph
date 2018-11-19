@@ -90,14 +90,14 @@ Future<void> main(List<String> args) async {
 
   // Insert packages
   for (final packageVersion in defaultCache.all()) {
-    _logger.info('loading $packageVersion');
+    _logger.info('loading versions for $packageVersion');
     final packageQuery = Query()..add(packageVersionStatement(packageVersion));
     await database.commit(packageQuery);
   }
 
   // Insert authors
   for (final packageVersion in defaultCache.all()) {
-    _logger.info('loading $packageVersion');
+    _logger.info('loading authors for $packageVersion');
     final packageQuery = Query()
       ..addAll(packageAuthorStatements(packageVersion));
     await database.commit(packageQuery);
