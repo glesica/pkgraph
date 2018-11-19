@@ -76,16 +76,28 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
 }
 
 /// Recursively populate a [Cache] starting at the given package.
+///
+/// Any package versions that depend on packages that have been removed
+/// from their respective pub server will be omitted from the cache. For
+/// example, if version 1.0.0 of package A depends on some version of
+/// package B, but version 2.0.0 of package A does not depend on any
+/// version of package B, and package B has since disappeared from its
+/// pub server, then the cache will include version 2.0.0 of package A,
+/// but not version 1.0.0 of package A. In this scenario the cache will
+/// also not include any version of package B.
 Future<void> populatePackagesCache(
-  String packageName, {
+  String originPackageName, {
   Cache cache,
   String source = defaultSource,
 }) async {
-  assert(packageName != null);
+  assert(originPackageName != null);
   assert(source != null);
 
-  final packageQueue = Queue.of([_QueuedPackage(packageName, source)]);
+  cache ??= defaultCache;
+
+  final packageQueue = Queue.of([_QueuedPackage(originPackageName, source)]);
   final packagesSeen = Set<_QueuedPackage>();
+  final emptyPackages = Set<_QueuedPackage>();
 
   while (packageQueue.isNotEmpty) {
     final nextQueuedPackage = packageQueue.removeFirst();
@@ -103,14 +115,29 @@ Future<void> populatePackagesCache(
       source: nextQueuedPackage.source,
     );
 
+    if (nextPackageVersions.isEmpty) {
+      emptyPackages.add(nextQueuedPackage);
+    }
+
     // Queue up all package dependencies. Those that have already been
     // fetched will be skipped when they pop up.
     for (final nextPackageVersion in nextPackageVersions) {
       for (final dependency in nextPackageVersion.dependencies) {
-        packageQueue.add(_QueuedPackage(dependency.name, dependency.source));
+        packageQueue
+            .add(_QueuedPackage(dependency.packageName, dependency.source));
       }
     }
   }
+
+  // Remove packages that depend on packages we couldn't find.
+  cache.prune(shouldPrune: (packageVersion) {
+    return packageVersion.dependencies.any((dependency) {
+      return emptyPackages.any((queuedPackage) {
+        return dependency.packageName == queuedPackage.packageName &&
+            dependency.source == queuedPackage.source;
+      });
+    });
+  });
 }
 
 /// A package waiting to be fetched.

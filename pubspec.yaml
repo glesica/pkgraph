@@ -7,6 +7,7 @@ environment:
   sdk: ^2.0.0
 
 dependencies:
+  args: ^1.5.1
   http: ^0.12.0
   pub_semver: ^1.4.2
   json_annotation: ^2.0.0

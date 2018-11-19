@@ -7,14 +7,14 @@ class Dependency {
   final VersionConstraint constraint;
 
   /// The name of the package depended upon.
-  final String name;
+  final String packageName;
 
   /// The pub server form which this dependency is to be satisfied.
   final String source;
 
   Dependency({
     @required this.constraint,
-    @required this.name,
+    @required this.packageName,
     @required this.source,
   });
 }

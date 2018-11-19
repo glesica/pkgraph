@@ -56,7 +56,7 @@ class Database {
         _logger.fine('request payload:\n$requestPayload');
         request.write(requestPayload);
       },
-      retries: 3,
+      retries: 5,
     );
 
     final response = await request.close();

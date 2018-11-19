@@ -5,3 +5,7 @@ resulting package dependency graph into a Neo4j database.
 
 Stay tuned.
 
+## Known Issues
+
+There's a bug around the `MAY_USE` relationship type. They are being inserted
+kind of nonsensically.

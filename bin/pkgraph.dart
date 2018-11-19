@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:logging/logging.dart';
+import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/cypher/author.dart';
 
 import 'package:pkgraph/src/cypher/package.dart';
@@ -12,19 +14,55 @@ import 'package:pkgraph/src/pub/fetch.dart';
 
 final _logger = Logger('pkgraph.dart');
 
-Future<void> main(List<String> arguments) async {
+Future<void> main(List<String> args) async {
   Logger.root.onRecord.listen((record) {
     stderr.writeln(record);
   });
 
-  final database = Database();
+  final argParser = ArgParser()
+    ..addFlag(
+      'help',
+      help: 'Display help',
+      negatable: false,
+    )
+    ..addOption(
+      'source',
+      abbr: 's',
+      help: 'Package source (pub server)',
+      defaultsTo: defaultSource,
+    );
+  final argResults = argParser.parse(args);
 
+  if (argResults['help']) {
+    print('usage: pkgraph [options] <package names>\n');
+    print(argParser.usage);
+    print('');
+    print('Examples:\n');
+    print('Load the graph for the "foo" package');
+    print('  pkgraph foo\n');
+    print('Load the graph for the "bar" package from pub.mycompany.com');
+    print('  pkgraph -s https://pub.mycompany.com bar\n');
+    print('Load the graph for the "foo" and "bar" packages');
+    print('  pkgraph foo bar\n');
+    exit(0);
+  }
+
+  // Extract
+
+  for (final packageName in argResults.arguments) {
+    await populatePackagesCache(
+      packageName,
+      source: argResults['source'],
+    );
+  }
+
+  // Load
+
+  final database = Database();
   final constraintsQuery = Query()
     ..add(authorConstraintStatement())
     ..add(sourceConstraintStatement());
   await database.commit(constraintsQuery);
-
-  await populatePackagesCache('state_machine');
 
   for (final packageVersion in defaultCache.all()) {
     _logger.info('loading $packageVersion');

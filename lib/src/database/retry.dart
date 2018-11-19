@@ -6,6 +6,8 @@ final _logger = Logger('retry.dart');
 /// Call a function and catch all errors, retrying a certain number of
 /// times.
 ///
+/// The maximum number of times the operation may run is `retries + 1`.
+///
 /// TODO: Improve how we handle the intermediate errors
 /// We probably want to have the onError callback accept the error and
 /// stack trace, along with the retries remaining so the behavior can

@@ -156,7 +156,7 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
 
     dependencies.add(Dependency(
       constraint: VersionConstraint.parse(constraint),
-      name: entryKey,
+      packageName: entryKey,
       source: source,
     ));
   }

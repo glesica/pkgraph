@@ -58,7 +58,7 @@ Iterable<Statement> packageDependenciesStatements(
     // Filter package versions to only compatible
     final dependencyVersions = cache
         .get(
-          packageName: dependency.name,
+          packageName: dependency.packageName,
           source: dependency.source,
         )
         .where((dependencyVersion) =>

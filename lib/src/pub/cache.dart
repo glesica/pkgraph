@@ -26,7 +26,7 @@ class Cache {
         return packageMap.values.expand((packages) {
           return packages;
         });
-      });
+      }).toList();
 
   bool contains({
     @required String packageName,
@@ -67,6 +67,22 @@ class Cache {
     }
 
     return _sourceToPackages[source][packageName];
+  }
+
+  /// Selectively remove any [PackageVersion] instance in the cache that
+  /// satisfies the given callback.
+  void prune({
+    @required bool shouldPrune(PackageVersion packageVersion),
+  }) {
+    assert(shouldPrune != null);
+
+    for (final source in _sourceToPackages.keys) {
+      for (final packageName in _sourceToPackages[source].keys) {
+        final packageVersions = _sourceToPackages[source][packageName];
+        _sourceToPackages[source][packageName] =
+            packageVersions.where((item) => !shouldPrune(item)).toList();
+      }
+    }
   }
 
   void set({
