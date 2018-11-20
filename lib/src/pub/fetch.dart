@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' show json;
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
+import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
@@ -14,11 +18,67 @@ const packageEndpoint = '/api/packages/';
 
 final _logger = Logger('fetch.dart');
 
+/// Fetch a package version from a local directory containing a
+/// pubspec.yaml file, presumably a Dart package or application.
+///
+/// Note that even though this returns an iterable there will
+/// only ever be one package returned. This may change in the
+/// future if we decide to do something tricky to get additional
+/// available local versions, but it's not even clear if that
+/// would really make sense, so here we are.
+///
+/// TODO: Cache won't work right if someone else depends on the local package
+Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
+  String packagePath, {
+  Cache cache,
+}) async {
+  assert(packagePath != null);
+
+  cache ??= defaultCache;
+
+  // TODO: This won't work for special paths like "." and ".."
+  final packageName = path.basename(packagePath);
+  final source = localSource;
+
+  if (cache.contains(
+    packageName: packageName,
+    source: source,
+  )) {
+    _logger.info('cache hit on $packageName from $source');
+    return cache.get(packageName: packageName, source: source);
+  }
+
+  // TODO: Provide better error handling for file operations
+  final pubspecPath = path.join(packagePath, 'pubspec.yaml');
+  _logger.info('reading $pubspecPath');
+  final pubspecContent = File(pubspecPath).readAsStringSync();
+
+  // This is... awful. Since the yaml package returns weird types
+  // instead of just working the same way as the JSON parser,
+  // the easiest way to convert seems to be to just parse the
+  // YAML, serialize it back to JSON (which is intended to work
+  // properly) and then deserialize it back from JSON.
+  final pubspecYaml = loadYaml(pubspecContent);
+  final pubspecJson = json.encode(pubspecYaml);
+  final pubspec = json.decode(pubspecJson) as Map<String, dynamic>;
+
+  final packageVersion =
+      PackageVersion.fromJson(pubspec, ordinal: 0, source: source);
+
+  cache.set(
+    packageName: packageName,
+    source: source,
+    packageVersions: [packageVersion],
+  );
+
+  return [packageVersion];
+}
+
 /// Fetch all versions of the given package from the given source
 /// (pub server).
 ///
 /// TODO: Use a `Uri` for the source instead of a string
-Future<Iterable<PackageVersion>> fetchPackageVersions(
+Future<Iterable<PackageVersion>> fetchPubPackageVersions(
   String packageName, {
   Cache cache,
   String source = defaultSource,
@@ -43,6 +103,7 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
 
   final url = '$source$packageEndpoint$packageName';
 
+  // TODO: Use the retry function here to deal with spotty connections
   _logger.info('requesting $url');
   final response = await http.get(url);
   _logger.fine('response body from $url: ${response.body}');
@@ -50,7 +111,6 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
   // TODO: Deal with various non-200 status codes more intelligently
   if (response.statusCode != 200) {
     _logger.warning('received ${response.statusCode} from $url');
-    // TODO: Consider unwinding the whole fetch and skipping the root package
     return const [];
   }
 
@@ -89,16 +149,24 @@ Future<Iterable<PackageVersion>> fetchPackageVersions(
 /// but not version 1.0.0 of package A. In this scenario the cache will
 /// also not include any version of package B.
 Future<void> populatePackagesCache(
-  String originPackageName, {
+  String originPackageNameOrPath, {
   Cache cache,
+  bool isLocalPackage = false,
   String source = defaultSource,
 }) async {
-  assert(originPackageName != null);
+  assert(originPackageNameOrPath != null);
+  assert(isLocalPackage != null);
   assert(source != null);
 
   cache ??= defaultCache;
 
-  final packageQueue = Queue.of([_QueuedPackage(originPackageName, source)]);
+  final packageQueue = Queue.of([
+    _QueuedPackage(
+      isLocalPackage: isLocalPackage,
+      packageName: originPackageNameOrPath,
+      source: source,
+    ),
+  ]);
   final packagesSeen = Set<_QueuedPackage>();
   final emptyPackages = Set<_QueuedPackage>();
 
@@ -112,11 +180,13 @@ Future<void> populatePackagesCache(
     }
     packagesSeen.add(nextQueuedPackage);
 
-    final nextPackageVersions = await fetchPackageVersions(
-      nextQueuedPackage.packageName,
-      cache: cache,
-      source: nextQueuedPackage.source,
-    );
+    final nextPackageVersions = nextQueuedPackage.isLocalPackage
+        ? await fetchLocalPackageVersions(nextQueuedPackage.packageName)
+        : await fetchPubPackageVersions(
+            nextQueuedPackage.packageName,
+            cache: cache,
+            source: nextQueuedPackage.source,
+          );
 
     if (nextPackageVersions.isEmpty) {
       emptyPackages.add(nextQueuedPackage);
@@ -126,13 +196,20 @@ Future<void> populatePackagesCache(
     // fetched will be skipped when they pop up.
     for (final nextPackageVersion in nextPackageVersions) {
       for (final dependency in nextPackageVersion.dependencies) {
-        packageQueue
-            .add(_QueuedPackage(dependency.packageName, dependency.source));
+        // TODO: Once we parse local dependencies we need to set that here
+        packageQueue.add(_QueuedPackage(
+          packageName: dependency.packageName,
+          source: dependency.source,
+        ));
       }
     }
   }
 
-  // Remove packages that depend on packages we couldn't find.
+  // Remove packages that depend on packages we couldn't find. This
+  // generally corresponds to packages that have been removed from
+  // the pub server for whatever reason. Package versions that depend
+  // on these packages won't solve anyway, so we don't include them
+  // in our graph.
   cache.prune(shouldPrune: (packageVersion) {
     return packageVersion.dependencies.any((dependency) {
       return emptyPackages.any((queuedPackage) {
@@ -145,10 +222,15 @@ Future<void> populatePackagesCache(
 
 /// A package waiting to be fetched.
 class _QueuedPackage {
+  final bool isLocalPackage;
   final String packageName;
   final String source;
 
-  _QueuedPackage(this.packageName, this.source);
+  _QueuedPackage({
+    this.isLocalPackage = false,
+    @required this.packageName,
+    @required this.source,
+  }) : assert(isLocalPackage != null);
 
   @override
   int get hashCode => packageName.hashCode ^ source.hashCode;

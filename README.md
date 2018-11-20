@@ -18,6 +18,16 @@ configured, in a Docker container.
 pub run pkgraph w_common
 ```
 
+It is also possible to start your traversal at a local package or
+application that may not be published to a pub server. Just pass
+the `--local` flag and any package names you pass will be interpreted
+as local paths to directories that contain `pubspec.yaml` files,
+presumably Dart packages.
+
+```shell
+pub run pkgraph --local projects/secret_dart_app
+```
+
 ## Example Queries
 
 Once you have some data loaded into a Neo4j database, what can you do
@@ -64,3 +74,17 @@ just update nodes with new data. This means you should be able to run
 it against an already-populated database without any trouble. However,
 I haven't verified this and there are no tests for it, so it is
 probably safer to blow away your database before re-running.
+
+## Future Work
+
+In addition to the work items listed below, there are, let's say ample,
+additional items sprinkled throughout the source code.
+
+1. Handle git dependencies
+2. Parse author strings when possible to separate the name and email
+3. Allow a combination of local, pub, and even git packages
+4. Serialize the package version cache for reuse on subsequent runs
+5. Allow custom Neo4j host and port
+
+Feel free to report issues if you find bugs or have suggestions to
+improve the tool.

@@ -12,3 +12,6 @@ const defaultPort = 7474;
 
 /// Default hosted package source.
 const defaultSource = 'https://pub.dartlang.org';
+
+/// The source we use for local package versions.
+const localSource = 'local';
