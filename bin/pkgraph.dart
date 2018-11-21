@@ -74,6 +74,12 @@ Future<void> main(List<String> args) async {
         }
       },
     )
+    ..addFlag(
+      'solved',
+      help: 'Augment graph with solved dependencies',
+      defaultsTo: false,
+      negatable: false,
+    )
     ..addOption(
       'source',
       abbr: 's',
@@ -83,16 +89,27 @@ Future<void> main(List<String> args) async {
   final argResults = argParser.parse(args);
 
   if (argResults['help']) {
-    print('usage: pkgraph [options] <package names>\n');
-    print(argParser.usage);
-    print('');
-    print('Examples:\n');
-    print('Load the graph for the "foo" package');
-    print('  pkgraph foo\n');
-    print('Load the graph for the "bar" package from pub.mycompany.com');
-    print('  pkgraph -s https://pub.mycompany.com bar\n');
-    print('Load the graph for the "foo" and "bar" packages');
-    print('  pkgraph foo bar\n');
+    print(
+      '''usage: pkgraph [options] <package names>
+
+${argParser.usage}
+
+Note: the --solved flag requires the --local flag and that each
+package path contains a correct pubspec.lock file in addition to
+a pubspec.yaml file.
+
+Examples:
+
+Load the graph for the "foo" package
+  pub run pkgraph foo
+
+Load the graph for the "bar" package from a private pub server
+  pub run pkgraph -s https://pub.mycompany.com bar
+
+Load the graph for the "foo" and "bar" packages
+  pub run pkgraph foo bar
+      ''',
+    );
     exit(0);
   }
 
