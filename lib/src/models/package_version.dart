@@ -5,6 +5,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/dependency.dart';
+import 'package:pkgraph/src/models/from_json.dart';
 
 part 'package_version.g.dart';
 
@@ -49,7 +50,7 @@ class PackageVersion {
   String _source;
 
   /// The version of the package represented by this object.
-  @JsonKey(fromJson: _toVersion)
+  @JsonKey(fromJson: toVersion)
   final Version version;
 
   // TODO: It's unfortunate that we have to expose this publicly
@@ -171,5 +172,3 @@ VersionConstraint _toSdk(Map<String, dynamic> value) {
 
   return VersionConstraint.parse(value['sdk'] as String);
 }
-
-Version _toVersion(String value) => Version.parse(value);

@@ -89,31 +89,13 @@ Future<void> main(List<String> args) async {
   final argResults = argParser.parse(args);
 
   if (argResults['help']) {
-    print(
-      '''usage: pkgraph [options] <package names>
-
-${argParser.usage}
-
-Note: the --solved flag requires the --local flag and that each
-package path contains a correct pubspec.lock file in addition to
-a pubspec.yaml file.
-
-Examples:
-
-Load the graph for the "foo" package
-  pub run pkgraph foo
-
-Load the graph for the "bar" package from a private pub server
-  pub run pkgraph -s https://pub.mycompany.com bar
-
-Load the graph for the "foo" and "bar" packages
-  pub run pkgraph foo bar
-      ''',
-    );
-    exit(0);
+    _printUsage(argParser.usage);
   }
 
-  // Extract
+  if (!argResults['local'] && argResults['solved']) {
+    stderr.writeln('--solved flag requires --local\n');
+    _printUsage(argParser.usage, 1);
+  }
 
   // TODO: Remove after we handle special paths, this is just a quick hack
   if (argResults['local']) {
@@ -125,12 +107,22 @@ Load the graph for the "foo" and "bar" packages
     });
   }
 
+  // Extract and transform
+
   for (final packageNameOrPath in argResults.rest) {
     await populatePackagesCache(
       packageNameOrPath,
       isLocalPackage: argResults['local'],
       source: argResults['source'],
     );
+  }
+
+  if (argResults['solved']) {
+    for (final packagePath in argResults.rest) {
+      // load the lockfile
+      // extract solved deps from it
+      // add appropriate relationships for deps
+    }
   }
 
   // Load
@@ -165,4 +157,31 @@ Load the graph for the "foo" and "bar" packages
   }
 
   exit(0);
+}
+
+void _printUsage(String usage, [int status = 0]) {
+  assert(status != null);
+
+  print(
+    '''usage: pkgraph [options] <package names>
+
+$usage
+
+Note: the --solved flag requires the --local flag and that each
+package path contains a correct pubspec.lock file in addition to
+a pubspec.yaml file.
+
+Examples:
+
+Load the graph for the "foo" package
+  pub run pkgraph foo
+
+Load the graph for the "bar" package from a private pub server
+  pub run pkgraph -s https://pub.mycompany.com bar
+
+Load the graph for the "foo" and "bar" packages
+  pub run pkgraph foo bar
+      ''',
+  );
+  exit(status);
 }

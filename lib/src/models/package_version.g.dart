@@ -18,5 +18,5 @@ PackageVersion _$PackageVersionFromJson(Map<String, dynamic> json) {
           : Uri.parse(json['homepage'] as String),
       name: json['name'] as String,
       sdk: _toSdk(json['environment'] as Map<String, dynamic>),
-      version: _toVersion(json['version'] as String));
+      version: toVersion(json['version'] as String));
 }

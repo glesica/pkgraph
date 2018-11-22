@@ -37,6 +37,8 @@ Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
   cache ??= defaultCache;
 
   // TODO: This won't work for special paths like "." and ".."
+  // We probably want a helper to compute the package name from the path
+  // so that we can find it in the cache when we do the solved insertions.
   final packageName = path.basename(packagePath);
   final source = localSource;
 
