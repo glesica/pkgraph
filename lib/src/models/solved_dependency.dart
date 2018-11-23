@@ -24,11 +24,12 @@ part 'solved_dependency.g.dart';
 class SolvedDependency {
   /// A container for the description object so that we can
   /// reference its fields to extract name and source (url).
-  final Map<String, dynamic> _description;
+  @JsonKey(fromJson: _toDescription)
+  final Description description;
 
   /// The type of the dependency: direct (main), direct (dev),
   /// and transitive.
-  @JsonKey(name: 'dependency', fromJson: toDependencyType)
+  @JsonKey(name: 'dependency', fromJson: _toDependencyType)
   final DependencyType type;
 
   /// Version of the dependency that was solved.
@@ -36,25 +37,25 @@ class SolvedDependency {
   final Version version;
 
   SolvedDependency({
-    @required Map<String, String> description,
+    @required this.description,
     @required this.type,
     @required this.version,
-  }) : _description = description;
+  });
 
   factory SolvedDependency.fromJson(Map<String, dynamic> json) =>
       _$SolvedDependencyFromJson(json);
 
   /// Name of the package depended upon.
   @JsonKey(ignore: true)
-  String get name => _description['name'] as String;
+  String get name => description.name;
 
   /// Source (pub server) where the dependency comes from.
   @JsonKey(ignore: true)
-  String get source => _description['url'] as String;
+  String get source => description.source;
 }
 
 /// Convert a string to a [DependencyType] for deserialization.
-DependencyType toDependencyType(String value) {
+DependencyType _toDependencyType(String value) {
   switch (value) {
     case 'direct main':
       return DependencyType.directMain;
@@ -69,4 +70,24 @@ DependencyType toDependencyType(String value) {
         'is not a valid dependency type',
       );
   }
+}
+
+/// Convert a map to a [Description] instance.
+Description _toDescription(Map<String, dynamic> value) => Description(
+      name: value['name'] as String,
+      source: value['url'] as String,
+    );
+
+/// A class to hold the description fields for a solved dependency.
+///
+/// TODO: Remove once json_serializable adds support for duplicate field names
+class Description {
+  final String name;
+
+  final String source;
+
+  Description({
+    @required this.name,
+    @required this.source,
+  });
 }

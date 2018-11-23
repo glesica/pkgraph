@@ -8,6 +8,7 @@ part of 'solved_dependency.dart';
 
 SolvedDependency _$SolvedDependencyFromJson(Map<String, dynamic> json) {
   return SolvedDependency(
-      type: toDependencyType(json['dependency'] as String),
+      description: _toDescription(json['description'] as Map<String, dynamic>),
+      type: _toDependencyType(json['dependency'] as String),
       version: toVersion(json['version'] as String));
 }

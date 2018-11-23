@@ -7,10 +7,12 @@ import 'package:logging/logging.dart';
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/cypher/author.dart';
 import 'package:pkgraph/src/cypher/package.dart';
+import 'package:pkgraph/src/cypher/solved_dependencies.dart';
 import 'package:pkgraph/src/database/database.dart';
 import 'package:pkgraph/src/database/query.dart';
 import 'package:pkgraph/src/pub/cache.dart';
 import 'package:pkgraph/src/pub/fetch.dart';
+import 'package:pkgraph/src/pub/path_to_package_name.dart';
 
 final _logger = Logger('pkgraph.dart');
 
@@ -117,14 +119,6 @@ Future<void> main(List<String> args) async {
     );
   }
 
-  if (argResults['solved']) {
-    for (final packagePath in argResults.rest) {
-      // load the lockfile
-      // extract solved deps from it
-      // add appropriate relationships for deps
-    }
-  }
-
   // Load
 
   final database = Database();
@@ -154,6 +148,33 @@ Future<void> main(List<String> args) async {
     final dependencyQuery = Query()
       ..addAll(packageDependenciesStatements(packageVersion));
     await database.commit(dependencyQuery);
+  }
+
+  // Insert solved dependency relationships if it was requested.
+  if (argResults['solved']) {
+    for (final packagePath in argResults.rest) {
+      _logger.info('loading solved dependencies for $packagePath');
+
+      final originPackageName = pathToPackageName(packagePath);
+      final originPackageVersion = defaultCache
+          .get(packageName: originPackageName, source: localSource)
+          .first;
+
+      // We're not getting the relationships inserted, the query is
+      // probably missing something that it needs. Log the responses
+      // to check.
+
+      final solvedQuery = Query()
+        ..add(packageVersionStatement(originPackageVersion));
+
+      for (final solvedDependency in fetchLocalSolvedPackages(packagePath)) {
+        solvedQuery.add(solvedDependencyStatement(
+          originPackageVersion,
+          solvedDependency,
+        ));
+      }
+      await database.commit(solvedQuery);
+    }
   }
 
   exit(0);

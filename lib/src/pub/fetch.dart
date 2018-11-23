@@ -7,16 +7,46 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
+import 'package:pkgraph/src/models/solved_dependency.dart';
 import 'package:pkgraph/src/pub/cache.dart';
+import 'package:pkgraph/src/pub/load_yaml_map.dart';
+import 'package:pkgraph/src/pub/path_to_package_name.dart';
 
 /// Packages endpoint for a pub server.
 const packageEndpoint = '/api/packages/';
 
 final _logger = Logger('fetch.dart');
+
+Iterable<SolvedDependency> fetchLocalSolvedPackages(
+  String packagePath, {
+  Cache cache,
+}) {
+  assert(packagePath != null);
+
+  cache ??= defaultCache;
+
+  final lockFilePath = path.join(packagePath, 'pubspec.lock');
+  final pubspecContent = File(lockFilePath).readAsStringSync();
+  final pubspec = loadYamlMap(pubspecContent);
+  final solvedMaps = pubspec['packages'] as Map<String, dynamic>;
+
+  final solvedDependencies = <SolvedDependency>[];
+  for (final map in solvedMaps.values) {
+    solvedDependencies.add(SolvedDependency.fromJson(map));
+  }
+
+  // Make sure that the origin package is in the cache so that we
+  // can grab it later when we add the solved relationships.
+  final packageName = pathToPackageName(packagePath);
+  if (!cache.contains(packageName: packageName, source: localSource)) {
+    fetchLocalPackageVersions(packagePath, cache: cache);
+  }
+
+  return solvedDependencies;
+}
 
 /// Fetch a package version from a local directory containing a
 /// pubspec.yaml file, presumably a Dart package or application.
@@ -37,9 +67,7 @@ Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
   cache ??= defaultCache;
 
   // TODO: This won't work for special paths like "." and ".."
-  // We probably want a helper to compute the package name from the path
-  // so that we can find it in the cache when we do the solved insertions.
-  final packageName = path.basename(packagePath);
+  final packageName = pathToPackageName(packagePath);
   final source = localSource;
 
   if (cache.contains(
@@ -54,15 +82,7 @@ Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
   final pubspecPath = path.join(packagePath, 'pubspec.yaml');
   _logger.info('reading $pubspecPath');
   final pubspecContent = File(pubspecPath).readAsStringSync();
-
-  // This is... awful. Since the yaml package returns weird types
-  // instead of just working the same way as the JSON parser,
-  // the easiest way to convert seems to be to just parse the
-  // YAML, serialize it back to JSON (which is intended to work
-  // properly) and then deserialize it back from JSON.
-  final pubspecYaml = loadYaml(pubspecContent);
-  final pubspecJson = json.encode(pubspecYaml);
-  final pubspec = json.decode(pubspecJson) as Map<String, dynamic>;
+  final pubspec = loadYamlMap(pubspecContent);
 
   final packageVersion =
       PackageVersion.fromJson(pubspec, ordinal: 0, source: source);
