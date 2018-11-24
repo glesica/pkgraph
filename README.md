@@ -28,6 +28,16 @@ presumably Dart packages.
 pub run pkgraph --local projects/secret_dart_app
 ```
 
+If you're interested in the actual dependency versions resulting from the pub
+solver, it is possible to create `SOLVED_TO` edges between the version of the
+package you're interested in and the solved dependency versions. Note that it
+is only possible to do this with a local package since it requires the
+`pubspec.lock` file.
+
+```shell
+pub run pkgraph --local --solved projects/secret_dart_app
+```
+
 ## Example Queries
 
 Once you have some data loaded into a Neo4j database, what can you do
