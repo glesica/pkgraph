@@ -34,6 +34,10 @@ class PackageVersion {
   /// The package description for this version.
   final String description;
 
+  /// The list of dev dependencies for this version.
+  @JsonKey(name: 'dev_dependencies', fromJson: _toDependencies)
+  final Iterable<Dependency> devDependencies;
+
   /// The URI of the package's homepage.
   @JsonKey(nullable: true)
   final Uri homepage;
@@ -59,6 +63,7 @@ class PackageVersion {
     @required this.authors,
     @required this.dependencies,
     @required this.description,
+    @required this.devDependencies,
     @required this.homepage,
     @required this.name,
     int ordinal,
@@ -76,6 +81,10 @@ class PackageVersion {
       _$PackageVersionFromJson(json)
         .._ordinal = ordinal
         .._source = source;
+
+  @JsonKey(ignore: true)
+  Iterable<Dependency> get allDependencies =>
+      []..addAll(dependencies)..addAll(devDependencies);
 
   @JsonKey(ignore: true)
   int get major => version.major;
@@ -143,7 +152,17 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
         //   unittest
         //     sdk: unittest
         if (entryValue.containsKey('sdk')) {
-          _logger.warning('skipping dependency $entry');
+          _logger.warning('skipping obsolete dependency $entry');
+          continue;
+        }
+
+        if (entryValue.containsKey('path')) {
+          _logger.warning('skipping path dependency $entry');
+          continue;
+        }
+
+        if (entryValue.containsKey('git')) {
+          _logger.warning('skipping git dependency $entry');
           continue;
         }
       }

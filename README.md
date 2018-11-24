@@ -85,7 +85,6 @@ additional items sprinkled throughout the source code.
 3. Allow a combination of local, pub, and even git packages
 4. Serialize the package version cache for reuse on subsequent runs
 5. Allow custom Neo4j host and port
-6. Include dev dependencies
 
 Feel free to report issues if you find bugs or have suggestions to
 improve the tool.

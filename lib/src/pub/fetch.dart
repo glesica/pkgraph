@@ -217,7 +217,7 @@ Future<void> populatePackagesCache(
     // Queue up all package dependencies. Those that have already been
     // fetched will be skipped when they pop up.
     for (final nextPackageVersion in nextPackageVersions) {
-      for (final dependency in nextPackageVersion.dependencies) {
+      for (final dependency in nextPackageVersion.allDependencies) {
         // TODO: Once we parse local dependencies we need to set that here
         packageQueue.add(_QueuedPackage(
           packageName: dependency.packageName,
@@ -233,7 +233,7 @@ Future<void> populatePackagesCache(
   // on these packages won't solve anyway, so we don't include them
   // in our graph.
   cache.prune(shouldPrune: (packageVersion) {
-    return packageVersion.dependencies.any((dependency) {
+    return packageVersion.allDependencies.any((dependency) {
       return emptyPackages.any((queuedPackage) {
         return dependency.packageName == queuedPackage.packageName &&
             dependency.source == queuedPackage.source;

@@ -57,7 +57,7 @@ Iterable<Statement> packageDependenciesStatements(
   cache ??= defaultCache;
 
   final statements = <Statement>[];
-  for (final dependency in package.dependencies) {
+  for (final dependency in package.allDependencies) {
     // Filter package versions to only those that match the constraint.
     final dependencyVersions = cache
         .get(

@@ -13,6 +13,8 @@ PackageVersion _$PackageVersionFromJson(Map<String, dynamic> json) {
       dependencies:
           _toDependencies(json['dependencies'] as Map<String, dynamic>),
       description: json['description'] as String,
+      devDependencies:
+          _toDependencies(json['dev_dependencies'] as Map<String, dynamic>),
       homepage: json['homepage'] == null
           ? null
           : Uri.parse(json['homepage'] as String),
