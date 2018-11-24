@@ -160,13 +160,13 @@ Future<void> main(List<String> args) async {
           .get(packageName: originPackageName, source: localSource)
           .first;
 
-      // We're not getting the relationships inserted, the query is
-      // probably missing something that it needs. Log the responses
-      // to check.
-
-      final solvedQuery = Query()
+      // Make sure the local version of the package has been added
+      // to the database so that we can add its solved relationships.
+      final localPackageQuery = Query()
         ..add(packageVersionStatement(originPackageVersion));
+      await database.commit(localPackageQuery);
 
+      final solvedQuery = Query();
       for (final solvedDependency in fetchLocalSolvedPackages(packagePath)) {
         solvedQuery.add(solvedDependencyStatement(
           originPackageVersion,

@@ -8,20 +8,20 @@ import 'package:pkgraph/src/models/solved_dependency.dart';
 Statement solvedDependencyStatement(PackageVersion originPackageVersion,
         SolvedDependency solvedDependency) =>
     Statement(statement: '''
-        MATCH (:Package {name: {origin}})-[:HAS_VERSION]->
-              (v:Version {version: {originVersion}})-[:HOSTED_ON]->
-              (:Source {url: {originSource}}),
+        MATCH (:Source {url: {originSource}})<-[:HOSTED_ON]-
+              (:Package {name: {origin}})-[:HAS_VERSION]->
+              (v:Version {version: {originVersion}}),
+              (:Source {url: {dependencySource}})<-[:HOSTED_ON]-
               (:Package {name: {dependency}})-[:HAS_VERSION]->
-              (d:Version {version: {dependencyVersion}})-[:HOSTED_ON]->
-              (:Source {url: {dependencySource}})
-        MERGE (v)-[r:SOLVED_TO]->(d)
+              (dv:Version {version: {dependencyVersion}})
+        MERGE (v)-[r:SOLVED_TO]->(dv)
           ON CREATE SET
             r.type = {type}
     ''')
+      ..set('originSource', originPackageVersion.source)
       ..set('origin', originPackageVersion.name)
       ..set('originVersion', originPackageVersion.version.toString())
-      ..set('originSource', originPackageVersion.source)
+      ..set('dependencySource', solvedDependency.source)
       ..set('dependency', solvedDependency.name)
       ..set('dependencyVersion', solvedDependency.version.toString())
-      ..set('dependencySource', solvedDependency.source)
       ..set('type', solvedDependency.type.name);
