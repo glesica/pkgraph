@@ -1,5 +1,6 @@
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/database/statement.dart';
+import 'package:pkgraph/src/models/dependency.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 import 'package:pkgraph/src/pub/cache.dart';
 
@@ -56,8 +57,7 @@ Iterable<Statement> packageDependenciesStatements(
 
   cache ??= defaultCache;
 
-  final statements = <Statement>[];
-  for (final dependency in package.allDependencies) {
+  Iterable<Statement> statementsForDependency(Dependency dependency, bool dev) {
     // Filter package versions to only those that match the constraint.
     final dependencyVersions = cache
         .get(
@@ -66,6 +66,8 @@ Iterable<Statement> packageDependenciesStatements(
         )
         .where((dependencyVersion) =>
             dependency.constraint.allows(dependencyVersion.version));
+
+    final statements = <Statement>[];
     for (final dependencyVersion in dependencyVersions) {
       // Build a statement that creates a relationship between the
       // package version and the dependent package version as shown.
@@ -77,16 +79,29 @@ Iterable<Statement> packageDependenciesStatements(
                 (ds:Source {url: {depSource}})<-[:HOSTED_ON]-
                 (dp:Package {name: {depPackage}})-[:HAS_VERSION]->
                 (dv:Version {version: {depVersion}})
-          MERGE (v)-[:MAY_USE]->(dv)
+          MERGE (v)-[:MAY_USE {dev: {dev}}]->(dv)
       ''')
         ..set('source', package.source)
         ..set('package', package.name)
         ..set('version', package.version.toString())
         ..set('depSource', dependencyVersion.source)
         ..set('depPackage', dependencyVersion.name)
-        ..set('depVersion', dependencyVersion.version.toString());
+        ..set('depVersion', dependencyVersion.version.toString())
+        ..set('dev', dev);
       statements.add(statement);
     }
+
+    return statements;
+  }
+
+  final statements = <Statement>[];
+
+  for (final dependency in package.dependencies) {
+    statements.addAll(statementsForDependency(dependency, false));
+  }
+
+  for (final dependency in package.devDependencies) {
+    statements.addAll(statementsForDependency(dependency, true));
   }
 
   return statements;
