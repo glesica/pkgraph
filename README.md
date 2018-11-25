@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/glesica/pkgraph.svg?branch=master)](https://travis-ci.org/glesica/pkgraph)
+
 # pkgraph
 
 This is a WIP. Eventually it will be able to query a pub server and

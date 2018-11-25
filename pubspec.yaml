@@ -1,14 +1,17 @@
 name: pkgraph
 version: 1.0.0
-description: Studying and visualizing Workiva dependencies.
-author: George Lesica <george.lesica@workiva.com>
+description: Studying and visualizing Dart package dependencies.
+author: George Lesica <george@lesica.com>
+homepage: https://github.com/glesica/pkgraph
 
 environment:
-  sdk: ^2.0.0
+  sdk: '>=2.0.0 <3.0.0'
 
 dependencies:
   args: ^1.5.1
   http: ^0.12.0
+  logging: ^0.11.0
+  meta: ^1.1.0
   path: ^1.6.2
   pub_semver: ^1.4.2
   json_annotation: ^2.0.0
