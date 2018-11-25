@@ -1,6 +1,6 @@
 name: pkgraph
-version: 1.0.0
-description: Studying and visualizing Dart package dependencies.
+version: 1.0.1
+description: A tool for studying and visualizing Dart package dependencies using the Neo4j graph database.
 author: George Lesica <george@lesica.com>
 homepage: https://github.com/glesica/pkgraph
 
