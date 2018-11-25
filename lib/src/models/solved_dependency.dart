@@ -20,7 +20,11 @@ part 'solved_dependency.g.dart';
 ///   version: "2.1.15"
 ///
 /// TODO: Need to handle solved path dependencies
-@JsonSerializable(nullable: false)
+@JsonSerializable(
+  nullable: false,
+  createToJson: false,
+  generateToJsonFunction: false,
+)
 class SolvedDependency {
   /// A container for the description object so that we can
   /// reference its fields to extract name and source (url).

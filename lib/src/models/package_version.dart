@@ -35,7 +35,7 @@ class PackageVersion {
   final String description;
 
   /// The list of dev dependencies for this version.
-  @JsonKey(name: 'dev_dependencies', fromJson: _toDependencies)
+  @JsonKey(name: 'dev_dependencies', fromJson: _toDependencies, toJson: _fromDependencies)
   final Iterable<Dependency> devDependencies;
 
   /// The URI of the package's homepage.
@@ -111,6 +111,8 @@ class PackageVersion {
   /// in the graph to which the package version will be attached.
   @JsonKey(ignore: true)
   String get source => _source;
+
+  Map<String, dynamic> toJson() => _$PackageVersionToJson(this);
 
   @override
   String toString() => '$source/$name @ $version';
