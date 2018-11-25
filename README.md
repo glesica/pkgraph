@@ -2,10 +2,11 @@
 
 # pkgraph
 
-This is a WIP. Eventually it will be able to query a pub server and
-load the resulting package dependency graph into a Neo4j database.
+This tool allows the user to gather Dart package data from a pub server or
+local package and load the dependency graph into a Neo4j database. It is
+a work-in-progress, additional documentation will be forthcoming.
 
-Stay tuned.
+For now, it works, though it isn't terrible efficient.
 
 ## Running
 
