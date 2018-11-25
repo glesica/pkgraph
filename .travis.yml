@@ -1,0 +1,6 @@
+language: dart
+dart:
+  - stable
+  - dev
+script:
+  - ./scripts/chech.sh

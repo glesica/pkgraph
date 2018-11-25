@@ -16,7 +16,5 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^1.0.0
-  dart_dev: ^2.0.0
-  dart_style: ^1.0.9
   json_serializable: ^2.0.0
   test: ^1.0.0
