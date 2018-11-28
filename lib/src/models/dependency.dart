@@ -17,7 +17,4 @@ class Dependency {
     @required this.packageName,
     @required this.source,
   });
-
-  // TODO: Handle source, this could get tricky
-  Map<String, dynamic> toJson() => {packageName: constraint.toString()};
 }
