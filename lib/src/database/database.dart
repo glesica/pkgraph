@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/database/query.dart';
+import 'package:pkgraph/src/database/results.dart';
 import 'package:pkgraph/src/database/retry.dart';
 
 const commitEndpoint = '/db/data/transaction/commit';
@@ -34,7 +35,7 @@ class Database {
   ///
   /// TODO: Real response processing and error handling
   /// TODO: Should we re-use the HTTP client?
-  Future<void> commit(
+  Future<Results> commit(
     Query query, {
     String endpoint = commitEndpoint,
   }) async {
@@ -67,8 +68,9 @@ class Database {
       retries: 5,
     );
 
-    if (responseJson is! Map<String, dynamic> ||
-        (responseJson['errors'] as List).isNotEmpty) {
+    final results = Results.fromJson(responseJson);
+
+    if (results.hasErrors) {
       throw DbException(
         request: requestPayload,
         response: responsePayload,
@@ -78,6 +80,8 @@ class Database {
     }
 
     _logger.info('successful response from $uri');
+
+    return results;
   }
 }
 
