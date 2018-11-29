@@ -146,6 +146,18 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
         //     version: ^1.4.0
         constraint = entryValue['version'] as String ?? 'any';
         source = entryValue['hosted']['url'] as String;
+      } else if (entryValue.containsKey('hosted') &&
+          entryValue['hosted'].containsKey('version')) {
+        // Sometimes the YAML parser screws up and reads a hosted dependency
+        // in as though it were written like this:
+        // dependencies:
+        //   transmogrify:
+        //     hosted:
+        //       name: transmogrify
+        //       url: http://your-package-server.com
+        //       version: ^1.4.0
+        constraint = entryValue['hosted']['version'];
+        source = entryValue['hosted']['url'];
       } else {
         // There's a weird older schema that looks like this, just skip it.
         // dependencies:
