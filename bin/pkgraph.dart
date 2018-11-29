@@ -76,6 +76,16 @@ Future<void> main(List<String> args) async {
         }
       },
     )
+    ..addOption(
+      'neo4j-user',
+      help: 'Neo4j username',
+      defaultsTo: null,
+    )
+    ..addOption(
+      'neo4j-pass',
+      help: 'Neo4j password',
+      defaultsTo: '',
+    )
     ..addFlag(
       'solved',
       help: 'Augment graph with solved dependencies',
@@ -121,7 +131,10 @@ Future<void> main(List<String> args) async {
 
   // Load
 
-  final database = Database();
+  final database = Database(
+    username: argResults['neo4j-user'],
+    password: argResults['neo4j-pass'],
+  );
   final constraintsQuery = Query()
     ..add(authorConstraintStatement())
     ..add(sourceConstraintStatement());

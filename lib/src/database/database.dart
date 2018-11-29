@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert' show json, utf8;
+import 'dart:convert' show json, utf8, base64;
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -18,15 +18,24 @@ final _logger = Logger('database.dart');
 ///
 /// TODO: Support for authentication
 class Database {
+  final Map<String, String> _headers = {};
   final String host;
   final bool https;
+  final String password;
   final int port;
+  final String username;
 
   Database({
     this.host = defaultHost,
     this.https = false,
+    this.password = '',
     this.port = defaultPort,
-  });
+    this.username = null,
+  })
+      : assert(host != null),
+        assert(https != null),
+        assert(password != null),
+        assert(port != null);
 
   String get baseUrl => '${https ? 'https' : 'http'}://$host:$port';
 
@@ -34,8 +43,7 @@ class Database {
   ///
   /// TODO: Real response processing and error handling
   /// TODO: Should we re-use the HTTP client?
-  Future<void> commit(
-    Query query, {
+  Future<void> commit(Query query, {
     String endpoint = commitEndpoint,
   }) async {
     final client = HttpClient();
@@ -49,9 +57,7 @@ class Database {
     await runWithRetry(
       operation: () async {
         final request = await client.postUrl(uri);
-        request.headers
-          ..add('Accept', 'application/json; charset=utf-8')
-          ..contentType = ContentType('application', 'json', charset: 'utf-8');
+        _setHeaders(request.headers);
         requestPayload = json.encode(query.toJson());
         _logger.fine('request payload:\n$requestPayload');
         request.write(requestPayload);
@@ -78,6 +84,18 @@ class Database {
     }
 
     _logger.info('successful response from $uri');
+  }
+
+  void _setHeaders(HttpHeaders headers) {
+    headers
+      ..add('Accept', 'application/json; charset=utf-8')
+      ..contentType = ContentType('application', 'json', charset: 'utf-8');
+
+    if (username != null) {
+      final bytes = utf8.encode('$username:$password');
+      final token = base64.encode(bytes);
+      headers.add('Authorization', 'Basic $token');
+    }
   }
 }
 
