@@ -156,8 +156,18 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
         //       name: transmogrify
         //       url: http://your-package-server.com
         //       version: ^1.4.0
-        constraint = entryValue['hosted']['version'];
-        source = entryValue['hosted']['url'];
+        constraint = entryValue['hosted']['version'] as String ?? 'any';
+        source = entryValue['hosted']['url'] as String;
+      } else if (entryValue.containsKey('hosted')) {
+        // Sometimes we encounter a hosted dependency with no version at
+        // all, so in this case we just assume "any".
+        // dependencies:
+        //   transmogrify:
+        //     hosted:
+        //       name: transmogrify
+        //       url: http://your-package-server.com
+        constraint = 'any';
+        source = entryValue['hosted']['url'] as String;
       } else {
         // There's a weird older schema that looks like this, just skip it.
         // dependencies:
