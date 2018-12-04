@@ -1,11 +1,10 @@
 import 'package:pkgraph/src/models/dependency_type.dart';
-import 'package:test/test.dart';
-
 import 'package:pkgraph/src/models/solved_dependency.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('SolvedDependency', () {
-    group('.parseJson', () {
+    group('.fromJson', () {
       test('should correctly parse a map', () {
         final solvedDependency = SolvedDependency.fromJson({
           'dependency': 'direct main',

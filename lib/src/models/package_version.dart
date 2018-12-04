@@ -1,11 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-import 'package:pub_semver/pub_semver.dart';
-
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/dependency.dart';
 import 'package:pkgraph/src/models/from_json.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 part 'package_version.g.dart';
 
