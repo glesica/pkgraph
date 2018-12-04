@@ -17,7 +17,7 @@ final _logger = Logger('retry.dart');
 Future<void> runWithRetry({
   @required Future<void> operation(),
   Future<void> onError(),
-  int retries = 1,
+  int retries = 2,
   Duration waitAfter = const Duration(seconds: 5),
 }) async {
   assert(operation != null);
@@ -40,7 +40,6 @@ Future<void> runWithRetry({
         rethrow;
       }
 
-      _logger.warning('waiting $waitAfter before retry');
       await Future.delayed(waitAfter);
     }
   }

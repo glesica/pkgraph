@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
-
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/cypher/author.dart';
 import 'package:pkgraph/src/cypher/package.dart';
@@ -58,8 +57,9 @@ Future<void> main(List<String> args) async {
   // Load
 
   final database = Database(
-    username: argResults['neo4j-user'],
-    password: argResults['neo4j-pass'],
+    password: config.neo4jPass,
+    server: config.neo4jServer,
+    username: config.neo4jUser,
   );
   final constraintsQuery = Query()
     ..add(authorConstraintStatement())

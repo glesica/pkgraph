@@ -4,8 +4,6 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
-
-import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/database/query.dart';
 import 'package:pkgraph/src/database/retry.dart';
 
@@ -15,27 +13,16 @@ final _logger = Logger('database.dart');
 
 /// A database configuration that allows queries to be sent through
 /// the transactional Cypher API.
-///
-/// TODO: Support for authentication
 class Database {
-  final String host;
-  final bool https;
   final String password;
-  final int port;
+  final Uri server;
   final String username;
 
   Database({
-    this.host = defaultHost,
-    this.https = false,
+    @required this.server,
     this.password = '',
-    this.port = defaultPort,
-    this.username = null,
-  })  : assert(host != null),
-        assert(https != null),
-        assert(password != null),
-        assert(port != null);
-
-  String get baseUrl => '${https ? 'https' : 'http'}://$host:$port';
+    this.username,
+  }) : assert(password != null);
 
   /// Open and immediately commit a transaction with the given query.
   ///
@@ -47,7 +34,7 @@ class Database {
   }) async {
     final client = HttpClient();
 
-    final uri = Uri.parse('$baseUrl$commitEndpoint');
+    final uri = server.resolve(commitEndpoint);
 
     String requestPayload;
     HttpClientResponse response;
@@ -61,7 +48,6 @@ class Database {
         _logger.fine('request payload:\n$requestPayload');
         request.write(requestPayload);
 
-        // TODO: This is an experiment because sometimes close() throws
         response = await request.close();
         _logger.fine('response status code: ${response.statusCode}');
         responsePayload = await response.transform(utf8.decoder).join();
@@ -81,8 +67,6 @@ class Database {
         uri: uri,
       );
     }
-
-    _logger.info('successful response from $uri');
   }
 
   void _setHeaders(HttpHeaders headers) {

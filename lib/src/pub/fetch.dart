@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 import 'package:pkgraph/src/models/solved_dependency.dart';
@@ -125,15 +124,24 @@ Future<Iterable<PackageVersion>> fetchPubPackageVersions(
 
   final url = '$source$packageEndpoint$packageName';
 
-  // TODO: Use the retry function here to deal with spotty connections
-  _logger.info('requesting $url');
-  final response = await http.get(url);
-  _logger.fine('response body from $url: ${response.body}');
+  // Simple retry here since we just want to return an empty
+  // list on a persistent failure, at least for now.
+  http.Response response;
+  for (final attempt in const [1, 2, 3]) {
+    _logger.fine('attempt $attempt to $url');
+    response = await http.get(url);
+    _logger.fine('response body from $url: ${response.body}');
 
-  // TODO: Deal with various non-200 status codes more intelligently
-  if (response.statusCode != 200) {
-    _logger.warning('received ${response.statusCode} from $url');
-    return const [];
+    if (response.statusCode == 200) {
+      break;
+    } else {
+      _logger.warning(
+          'received ${response.statusCode} from $url on attempt $attempt of 3');
+
+      if (attempt == 3) {
+        return const [];
+      }
+    }
   }
 
   final jsonBody = json.decode(response.body);

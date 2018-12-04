@@ -10,11 +10,11 @@ class Config {
 
   final bool isSolved;
 
-  final String neo4jHost;
+  final String neo4jPass;
 
-  final bool neo4jHttps;
+  final Uri neo4jServer;
 
-  final int neo4jPort;
+  final String neo4jUser;
 
   final String source;
 
@@ -23,9 +23,9 @@ class Config {
     @required this.isHelp,
     @required this.isLocal,
     @required this.isSolved,
-    @required this.neo4jHost,
-    @required this.neo4jHttps,
-    @required this.neo4jPort,
+    @required this.neo4jPass,
+    @required this.neo4jServer,
+    @required this.neo4jUser,
     @required this.source,
   });
 
@@ -35,9 +35,9 @@ class Config {
     isHelp: results['help'],
     isLocal: results['local'],
     isSolved: results['solved'],
-    neo4jHost: results['neo4j-host'],
-    neo4jHttps: results['neo4j-https'],
-    neo4jPort: int.parse(results['neo4j-port']),
+    neo4jPass: results['neo4j-pass'],
+    neo4jServer: Uri.parse(results['neo4j-server']),
+    neo4jUser: results['neo4j-user'],
     source: results['source'],
   );
   }
