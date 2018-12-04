@@ -29,14 +29,16 @@ class Config {
     @required this.source,
   });
 
-  factory Config.fromArgResults(ArgResults results) => Config(
+  factory Config.fromArgResults(ArgResults results) {
+    return Config(
     arguments: results.rest,
     isHelp: results['help'],
     isLocal: results['local'],
     isSolved: results['solved'],
-    neo4jHost: results['neo4jHost'],
-    neo4jHttps: results['neo4jHttps'],
-    neo4jPort: int.parse(results['neo4jPort']),
+    neo4jHost: results['neo4j-host'],
+    neo4jHttps: results['neo4j-https'],
+    neo4jPort: int.parse(results['neo4j-port']),
     source: results['source'],
   );
+  }
 }
