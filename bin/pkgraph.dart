@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:logging/logging.dart';
 
 import 'package:pkgraph/src/constants.dart';
@@ -14,6 +13,9 @@ import 'package:pkgraph/src/pub/cache.dart';
 import 'package:pkgraph/src/pub/fetch.dart';
 import 'package:pkgraph/src/pub/path_to_package_name.dart';
 
+import 'args.dart';
+import 'config.dart';
+
 final _logger = Logger('pkgraph.dart');
 
 Future<void> main(List<String> args) async {
@@ -21,97 +23,21 @@ Future<void> main(List<String> args) async {
     stderr.writeln(record);
   });
 
-  final argParser = ArgParser()
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      help: 'Display help',
-      negatable: false,
-    )
-    ..addFlag(
-      'local',
-      help: 'Treat package names as local paths',
-      defaultsTo: false,
-      negatable: false,
-    )
-    ..addOption(
-      'neo4j-host',
-      help: 'Neo4j host',
-      defaultsTo: defaultHost,
-      callback: (value) {
-        // TODO: Remove once we honor this
-        if (value != defaultHost) {
-          throw ArgumentError('neo4j-host is not yet implemented');
-        }
-      },
-    )
-    ..addFlag(
-      'neo4j-https',
-      help: 'Use HTTPS to connect to Neo4j',
-      defaultsTo: false,
-      callback: (value) {
-        // TODO: Remove once we honor this
-        if (value != false) {
-          throw ArgumentError('neo4j-https is not yet implemented');
-        }
-      },
-      negatable: false,
-    )
-    ..addOption(
-      'neo4j-port',
-      help: 'Neo4j port',
-      defaultsTo: defaultPort.toString(),
-      callback: (value) {
-        final parsedValue = int.tryParse(value);
-        if (parsedValue == null || parsedValue < 1) {
-          throw ArgumentError.value(
-            value,
-            'neo4j-port',
-            'A positive integer is required',
-          );
-        }
-        // TODO: Remove once we honor this
-        if (value != defaultPort.toString()) {
-          throw ArgumentError('neo4j-port is not yet implemented');
-        }
-      },
-    )
-    ..addOption(
-      'neo4j-user',
-      help: 'Neo4j username',
-      defaultsTo: null,
-    )
-    ..addOption(
-      'neo4j-pass',
-      help: 'Neo4j password',
-      defaultsTo: '',
-    )
-    ..addFlag(
-      'solved',
-      help: 'Augment graph with solved dependencies',
-      defaultsTo: false,
-      negatable: false,
-    )
-    ..addOption(
-      'source',
-      abbr: 's',
-      help: 'Package source (pub server)',
-      defaultsTo: defaultSource,
-    );
   final argResults = argParser.parse(args);
+  final config = Config.fromArgResults(argResults);
 
-  if (argResults['help']) {
+  if (config.isHelp) {
     _printUsage(argParser.usage);
   }
 
-  if (!argResults['local'] && argResults['solved']) {
+  if (!config.isLocal && config.isSolved) {
     stderr.writeln('--solved flag requires --local\n');
     _printUsage(argParser.usage, 1);
   }
 
   // TODO: Remove after we handle special paths, this is just a quick hack
-  if (argResults['local']) {
-    argResults.rest.forEach((packagePath) {
+  if (config.isLocal) {
+    config.arguments.forEach((packagePath) {
       if (packagePath.endsWith('.')) {
         throw ArgumentError.value(
             packagePath, 'package path', 'Cannot use "." or ".."');
@@ -121,11 +47,11 @@ Future<void> main(List<String> args) async {
 
   // Extract and transform
 
-  for (final packageNameOrPath in argResults.rest) {
+  for (final packageNameOrPath in config.arguments) {
     await populatePackagesCache(
       packageNameOrPath,
-      isLocalPackage: argResults['local'],
-      source: argResults['source'],
+      isLocalPackage: config.isLocal,
+      source: config.source,
     );
   }
 
@@ -164,8 +90,8 @@ Future<void> main(List<String> args) async {
   }
 
   // Insert solved dependency relationships if it was requested.
-  if (argResults['solved']) {
-    for (final packagePath in argResults.rest) {
+  if (config.isSolved) {
+    for (final packagePath in config.arguments) {
       _logger.info('loading solved dependencies for $packagePath');
 
       final originPackageName = pathToPackageName(packagePath);

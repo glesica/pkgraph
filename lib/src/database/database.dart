@@ -18,7 +18,6 @@ final _logger = Logger('database.dart');
 ///
 /// TODO: Support for authentication
 class Database {
-  final Map<String, String> _headers = {};
   final String host;
   final bool https;
   final String password;
@@ -31,8 +30,7 @@ class Database {
     this.password = '',
     this.port = defaultPort,
     this.username = null,
-  })
-      : assert(host != null),
+  })  : assert(host != null),
         assert(https != null),
         assert(password != null),
         assert(port != null);
@@ -43,7 +41,8 @@ class Database {
   ///
   /// TODO: Real response processing and error handling
   /// TODO: Should we re-use the HTTP client?
-  Future<void> commit(Query query, {
+  Future<void> commit(
+    Query query, {
     String endpoint = commitEndpoint,
   }) async {
     final client = HttpClient();
