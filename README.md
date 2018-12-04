@@ -82,11 +82,13 @@ that support Dart 2 and a list of specific versions that for each.
 
 ## Known Issues
 
-In theory, the queries the tool runs should be idempotent, and should
-just update nodes with new data. This means you should be able to run
-it against an already-populated database without any trouble. However,
-I haven't verified this and there are no tests for it, so it is
-probably safer to blow away your database before re-running.
+In theory, the queries the tool runs should be idempotent, and should just
+update nodes with new data. This means you should be able to run it against
+an already-populated database without any trouble.
+
+However, I haven't verified this and there are no tests for it, so it is
+probably safer to blow away your database before re-running. Or you could add
+a test suite, whatever suits you.
 
 ## Future Work
 
@@ -97,7 +99,14 @@ additional items sprinkled throughout the source code.
 2. Parse author strings when possible to separate the name and email
 3. Allow a combination of local, pub, and even git packages
 4. Serialize the package version cache for reuse on subsequent runs
-5. Allow custom Neo4j host and port
 
 Feel free to report issues if you find bugs or have suggestions to
 improve the tool.
+
+## Roadmap
+
+Eventually the tool should be able to run as a cron job and pull in a variety
+of packages of mixed type (local, public, and private). I'd like it to also
+be able to execute a handful of potentially useful queries and display
+results in a reasonable fashion. A nifty web interface to view those results
+and maybe even control the tool itself would be bonus points.
