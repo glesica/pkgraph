@@ -7,6 +7,9 @@ homepage: https://github.com/glesica/pkgraph
 environment:
   sdk: '>=2.0.0 <3.0.0'
 
+executables:
+  pkgraph:
+
 dependencies:
   args: ^1.5.1
   http: ^0.12.0
