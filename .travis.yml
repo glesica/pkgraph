@@ -4,4 +4,4 @@ dart:
   - stable
   - dev
 script:
-  - ./scripts/check.sh
+  - ./tool/check.sh

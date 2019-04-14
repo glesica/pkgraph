@@ -16,8 +16,8 @@ void main() {
         'version': '1.5.1',
       });
       audit.add(dependency);
-      final license = await audit.asText;
-      expect(license, '');
+      final license = await audit.asJson;
+      expect(license, contains('args'));
     });
   });
 }

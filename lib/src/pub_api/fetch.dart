@@ -36,14 +36,13 @@ Future<Package> fetchPackageVersion({
   ].join('/');
 
   final response = await runWithRetry<http.Response>(
-    operation: () => http.get(versionUrl),
-    logger: _logger,
-    validate: (response) async {
-      if (response.statusCode != 200) {
-        throw Exception('Status code was ${response.statusCode}');
-      }
-    }
-  );
+      operation: () => http.get(versionUrl),
+      logger: _logger,
+      validate: (response) async {
+        if (response.statusCode != 200) {
+          throw Exception('Status code was ${response.statusCode}');
+        }
+      });
   final jsonBody = json.decode(response.body);
 
   package = Package.fromJson(jsonBody);

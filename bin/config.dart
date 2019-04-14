@@ -31,14 +31,14 @@ class Config {
 
   factory Config.fromArgResults(ArgResults results) {
     return Config(
-    arguments: results.rest,
-    isHelp: results['help'],
-    isLocal: results['local'],
-    isSolved: results['solved'],
-    neo4jPass: results['neo4j-pass'],
-    neo4jServer: Uri.parse(results['neo4j-server']),
-    neo4jUser: results['neo4j-user'],
-    source: results['source'],
-  );
+      arguments: results.rest,
+      isHelp: results['help'],
+      isLocal: results['local'],
+      isSolved: results['solved'],
+      neo4jPass: results['neo4j-pass'],
+      neo4jServer: Uri.parse(results['neo4j-server']),
+      neo4jUser: results['neo4j-user'],
+      source: results['source'],
+    );
   }
 }
