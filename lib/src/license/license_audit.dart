@@ -55,7 +55,7 @@ class LicenseAudit {
     for (final name in _names) {
       output += '## $name\n';
       final license = _licenses[name];
-      output += '```\n$license\n```\n\n';
+      output += '```\n${license.trimRight()}\n```\n\n';
     }
 
     return output;

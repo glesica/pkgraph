@@ -9,6 +9,7 @@ import 'package:pkgraph/src/retry.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 final _logger = Logger('fetch');
+final _rateLimiters = <String, Future<void>>{};
 
 const defaultSource = 'https://pub.dartlang.org';
 
@@ -26,8 +27,13 @@ Future<Package> fetchPackageVersion({
     return package;
   }
 
+  final sourceString = source?.toString() ?? defaultSource;
+
+  await _rateLimiters[sourceString];
+  _rateLimiters[sourceString] = Future.delayed(Duration(seconds: 1));
+
   final versionUrl = [
-    source?.toString() ?? defaultSource,
+    sourceString,
     'api',
     'packages',
     name,
