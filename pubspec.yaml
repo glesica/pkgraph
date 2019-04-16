@@ -1,5 +1,5 @@
 name: pkgraph
-version: 2.0.0
+version: 2.1.0
 description: A tool for studying and visualizing Dart package dependencies.
 author: George Lesica <george@lesica.com>
 homepage: https://github.com/glesica/pkgraph

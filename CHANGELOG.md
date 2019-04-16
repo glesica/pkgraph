@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+Add initial license audit functionality.
+
 ## 2.0.0
 
 Handle additional pubspec formatting edge cases. Improve the CLI. Clean up
