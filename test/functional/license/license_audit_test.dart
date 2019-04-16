@@ -4,8 +4,8 @@ import 'package:pkgraph/src/license/license_audit.dart';
 
 void main() {
   group('LicenseAudit', () {
-    test('should do stuff', () async {
-      final audit = LicenseAudit()
+    test('should create a json audit report', () async {
+      final audit = LicenseAudit(sources: const ['https://pub.dartlang.org'])
         ..add(SolvedDependency.fromJson({
           'dependency': 'direct main',
           'description': {

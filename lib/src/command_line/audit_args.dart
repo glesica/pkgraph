@@ -44,4 +44,11 @@ final argParser = ArgParser(usageLineLength: 80)
     help: 'Text to include at the beginning of the report (html, md, txt)',
     defaultsTo: '',
     valueHelp: 'TEXT',
+  )
+  ..addMultiOption(
+    'sources',
+    abbr: 's',
+    help: 'Sources to include, allows inclusion of a private pub server',
+    defaultsTo: ['https://pub.dartlang.org'],
+    valueHelp: 'SOURCE',
   );

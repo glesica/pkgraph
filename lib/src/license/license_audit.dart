@@ -25,9 +25,13 @@ class LicenseAudit {
 
   final Queue<SolvedDependency> _processQueue = Queue<SolvedDependency>();
 
+  final Set<String> _sources;
+
   LicenseAudit({
     PubCache cache,
-  }) : _cache = cache ?? PubCache.empty();
+    Iterable<String> sources,
+  })  : _cache = cache ?? PubCache.empty(),
+        _sources = sources?.toSet() ?? Set<String>();
 
   Future<String> get asHtml async {
     await _drainQueue();
@@ -90,6 +94,12 @@ class LicenseAudit {
     while (_processQueue.isNotEmpty) {
       final dependency = _processQueue.removeFirst();
 
+      if (!_sources.contains(dependency.source)) {
+        _logger.info(
+            'skipping package ${dependency.name} (from ${dependency.source})');
+        continue;
+      }
+
       final package = await fetchPackageVersion(
         cache: _cache,
         name: dependency.name,
@@ -98,7 +108,7 @@ class LicenseAudit {
       );
 
       if (package == null) {
-        _logger.info('skipping package ${dependency.name}');
+        _logger.info('skipping package ${dependency.name} (failed to fetch)');
         continue;
       }
 

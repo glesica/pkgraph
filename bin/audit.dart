@@ -23,7 +23,9 @@ Future<void> main(List<String> args) async {
   }
 
   final jsonLockFile = loadLockFile(config.lockFilePath);
-  final licenseAudit = LicenseAudit()..addFromLockFile(jsonLockFile);
+  final licenseAudit = LicenseAudit(
+    sources: config.sources,
+  )..addFromLockFile(jsonLockFile);
 
   String output = '';
   if (config.preamble != '') {

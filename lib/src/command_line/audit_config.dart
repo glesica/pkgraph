@@ -15,12 +15,15 @@ class Config {
 
   final String preamble;
 
+  final Iterable<String> sources;
+
   Config({
     @required this.isHelp,
     @required this.outputFormat,
     @required this.packagePath,
     @required postamble,
     @required preamble,
+    @required this.sources,
   })  : lockFilePath = path.absolute(
           path.normalize(
             path.join(
@@ -38,6 +41,7 @@ class Config {
         packagePath: results['package'],
         postamble: results['postamble'],
         preamble: results['preamble'],
+        sources: results['sources'],
       );
 }
 
