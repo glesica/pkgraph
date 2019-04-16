@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -6,6 +7,8 @@ import 'package:pkgraph/src/models/dependency_type.dart';
 import 'package:pkgraph/src/models/from_json.dart';
 
 part 'solved_dependency.g.dart';
+
+final _logger = Logger('SolvedDependency');
 
 /// A container for a solved dependency from a pubspec.lock file.
 ///
@@ -27,6 +30,10 @@ class SolvedDependency {
   @JsonKey(fromJson: _toDescription)
   final Description description;
 
+  /// The source as a [Uri] instead of a `String`.
+  @JsonKey(ignore: true)
+  final Uri sourceUri;
+
   /// The type of the dependency: direct (main), direct (dev),
   /// and transitive.
   @JsonKey(name: 'dependency', fromJson: _toDependencyType)
@@ -40,7 +47,7 @@ class SolvedDependency {
     @required this.description,
     @required this.type,
     @required this.version,
-  });
+  }) : sourceUri = Uri.parse(description.source);
 
   factory SolvedDependency.fromJson(Map<String, dynamic> json) =>
       _$SolvedDependencyFromJson(json);
@@ -64,11 +71,10 @@ DependencyType _toDependencyType(String value) {
     case 'transitive':
       return DependencyType.transitive;
     default:
-      throw ArgumentError.value(
-        value,
-        'value',
-        'is not a valid dependency type',
+      _logger.fine(
+        '"$value" is not a valid dependency type',
       );
+      return DependencyType.unknown;
   }
 }
 

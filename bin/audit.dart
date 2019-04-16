@@ -1,12 +1,17 @@
-import 'dart:io';
 import 'dart:convert' show json;
+import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:pkgraph/src/command_line/audit_args.dart';
 import 'package:pkgraph/src/command_line/audit_config.dart';
 import 'package:pkgraph/src/license/license_audit.dart';
-import 'package:yaml/yaml.dart';
+import 'package:pkgraph/src/pub_api/load_lock_file.dart';
 
 Future<void> main(List<String> args) async {
+  Logger.root.onRecord.listen((record) {
+    stderr.writeln(record);
+  });
+
   final argResults = argParser.parse(args);
   final config = Config.fromArgResults(argResults);
 
@@ -45,19 +50,4 @@ Future<void> main(List<String> args) async {
   }
 
   print(output);
-}
-
-Map loadLockFile(String filePath) {
-  String lockFileContent;
-  try {
-    lockFileContent = File(filePath).readAsStringSync();
-  } on FileSystemException catch (_) {
-    stderr.writeln('Failed to load "$filePath", does it exist?');
-    exit(1);
-  }
-
-  // This is stupid but it's the simplest way to shed all
-  // the YAML type nonsense while we wait for them to get
-  // rid of it altogether.
-  return json.decode(json.encode(loadYaml(lockFileContent)));
 }

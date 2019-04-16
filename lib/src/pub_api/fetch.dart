@@ -41,12 +41,19 @@ Future<Package> fetchPackageVersion({
     version.toString(),
   ].join('/');
 
+  // We can't handle git or path dependencies right now so just bail.
+  if (!versionUrl.startsWith('http')) {
+    return null;
+  }
+
   final response = await runWithRetry<http.Response>(
       operation: () => http.get(versionUrl),
       logger: _logger,
       validate: (response) async {
         if (response.statusCode != 200) {
-          throw Exception('Status code was ${response.statusCode}');
+          throw Exception(
+            '"$versionUrl" returned status code ${response.statusCode}',
+          );
         }
       });
   final jsonBody = json.decode(response.body);

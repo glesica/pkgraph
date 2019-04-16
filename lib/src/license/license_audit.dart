@@ -34,7 +34,8 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      output += '<h2>$name</h2>\n';
+      final dependency = _dependencies[name];
+      output += '<h2>$name ${dependency.version}</h2>\n';
       final license = _licenses[name];
       output += '<pre>$license</pre>\n\n';
     }
@@ -42,10 +43,19 @@ class LicenseAudit {
     return output;
   }
 
-  Future<Map<String, String>> get asJson async {
+  Future<Map<String, Map<String, String>>> get asJson async {
     await _drainQueue();
 
-    return _licenses;
+    final jsonAudit = <String, Map<String, String>>{};
+    _licenses.forEach((packageName, licenseText) {
+      final dependency = _dependencies[packageName];
+      jsonAudit[packageName] = {
+        'license': licenseText,
+        'version': dependency.version.toString(),
+      };
+    });
+
+    return jsonAudit;
   }
 
   Future<String> get asMarkdown async {
@@ -53,7 +63,8 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      output += '## $name\n';
+      final dependency = _dependencies[name];
+      output += '## $name ${dependency.version}\n';
       final license = _licenses[name];
       output += '```\n${license.trimRight()}\n```\n\n';
     }
@@ -66,7 +77,8 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      output += '$name\n';
+      final dependency = _dependencies[name];
+      output += '$name ${dependency.version}\n';
       final license = _licenses[name];
       output += '$license\n\n';
     }
@@ -77,14 +89,21 @@ class LicenseAudit {
   Future<void> _drainQueue() async {
     while (_processQueue.isNotEmpty) {
       final dependency = _processQueue.removeFirst();
-      _names.add(dependency.name);
-      _dependencies[dependency.name] = dependency;
 
       final package = await fetchPackageVersion(
         cache: _cache,
         name: dependency.name,
         version: dependency.version,
+        source: dependency.sourceUri,
       );
+
+      if (package == null) {
+        _logger.info('skipping package ${dependency.name}');
+        continue;
+      }
+
+      _names.add(dependency.name);
+      _dependencies[dependency.name] = dependency;
       _packages[dependency.name] = package;
 
       final response = await runWithRetry(
@@ -120,10 +139,10 @@ class LicenseAudit {
     }
 
     if (lockFile['packages'] is! Map) {
-      throw ArgumentError('missing packages map');
+      throw ArgumentError('wrong "packages" type');
     }
 
-    lockFile['packages'].forEach((_, jsonDependency) {
+    lockFile['packages'].forEach((packageName, jsonDependency) {
       final dependency = SolvedDependency.fromJson(jsonDependency);
       add(dependency);
     });
