@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:pkgraph/src/command_line/pkgraph_args.dart';
+import 'package:pkgraph/src/command_line/pkgraph_config.dart';
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/cypher/author.dart';
 import 'package:pkgraph/src/cypher/package.dart';
@@ -11,9 +13,6 @@ import 'package:pkgraph/src/database/query.dart';
 import 'package:pkgraph/src/pub/cache.dart';
 import 'package:pkgraph/src/pub/fetch.dart';
 import 'package:pkgraph/src/pub/path_to_package_name.dart';
-
-import 'args.dart';
-import 'config.dart';
 
 final _logger = Logger('pkgraph.dart');
 

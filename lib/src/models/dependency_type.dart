@@ -7,6 +7,8 @@ class DependencyType {
 
   static const transitive = DependencyType._('transitive');
 
+  static const unknown = DependencyType._('unknown');
+
   /// Type name for output.
   final String name;
 
