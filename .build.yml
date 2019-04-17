@@ -9,4 +9,4 @@ tasks:
     pub get
 - check: |
     cd pkgraph
-    sh scripts/check.sh
+    sh scripts/check-full.sh
