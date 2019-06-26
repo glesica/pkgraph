@@ -50,7 +50,8 @@ class Database {
 
         response = await request.close();
         _logger.fine('response status code: ${response.statusCode}');
-        responsePayload = await response.transform(utf8.decoder).join();
+        responsePayload =
+            await response.cast<List<int>>().transform(utf8.decoder).join();
         _logger.fine('response payload:\n$responsePayload');
 
         responseJson = json.decode(responsePayload);
