@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
 
@@ -29,12 +27,9 @@ class Cache {
       }).toList();
 
   bool contains({
-    @required String packageName,
+    required String packageName,
     String source = defaultSource,
   }) {
-    assert(packageName != null);
-    assert(source != null);
-
     final packageVersionsMap = _sourceToPackages[source];
     if (packageVersionsMap == null) {
       return false;
@@ -49,8 +44,8 @@ class Cache {
   }
 
   Iterable<PackageVersion> get({
-    Iterable<PackageVersion> orElse(),
-    @required String packageName,
+    Iterable<PackageVersion> orElse()?,
+    required String packageName,
     String source = defaultSource,
   }) {
     assert(packageName != null);
@@ -66,20 +61,18 @@ class Cache {
       return orElse();
     }
 
-    return _sourceToPackages[source][packageName];
+    return _sourceToPackages[source]![packageName]!;
   }
 
   /// Selectively remove any [PackageVersion] instance in the cache that
   /// satisfies the given callback.
   void prune({
-    @required bool shouldPrune(PackageVersion packageVersion),
+    required bool shouldPrune(PackageVersion packageVersion),
   }) {
-    assert(shouldPrune != null);
-
     for (final source in _sourceToPackages.keys) {
-      for (final packageName in _sourceToPackages[source].keys) {
-        final packageVersions = _sourceToPackages[source][packageName];
-        _sourceToPackages[source][packageName] =
+      for (final packageName in _sourceToPackages[source]!.keys) {
+        final packageVersions = _sourceToPackages[source]![packageName]!;
+        _sourceToPackages[source]![packageName] =
             packageVersions.where((item) => !shouldPrune(item)).toList();
       }
     }
@@ -87,19 +80,15 @@ class Cache {
 
   void set({
     String source = defaultSource,
-    @required String packageName,
-    @required Iterable<PackageVersion> packageVersions,
+    required String packageName,
+    required Iterable<PackageVersion> packageVersions,
   }) {
-    assert(packageName != null);
-    assert(source != null);
-    assert(packageVersions != null);
-
     final sourcesMap = _sourceToPackages;
     if (!sourcesMap.containsKey(source)) {
       sourcesMap[source] = <String, Iterable<PackageVersion>>{};
     }
 
-    final packageVersionsMap = sourcesMap[source];
+    final packageVersionsMap = sourcesMap[source]!;
     if (!packageVersionsMap.containsKey(packageName)) {
       packageVersionsMap[packageName] = <PackageVersion>[]
         ..addAll(packageVersions);
@@ -122,13 +111,13 @@ class CacheException implements Exception {
   final String source;
 
   CacheException.duplicate({
-    @required this.packageName,
-    @required this.source,
+    required this.packageName,
+    required this.source,
   }) : _error = 'duplicate package';
 
   CacheException.missing({
-    @required this.packageName,
-    @required this.source,
+    required this.packageName,
+    required this.source,
   }) : _error = 'missing package';
 
   @override

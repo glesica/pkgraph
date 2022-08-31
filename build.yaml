@@ -4,4 +4,3 @@ targets:
       json_serializable:
         options:
           create_to_json: false
-          generate_to_json_function: false

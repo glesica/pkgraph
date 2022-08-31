@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:meta/meta.dart';
 
 class Config {
   final Iterable<String> arguments;
@@ -19,14 +18,14 @@ class Config {
   final String source;
 
   Config({
-    @required this.arguments,
-    @required this.isHelp,
-    @required this.isLocal,
-    @required this.isSolved,
-    @required this.neo4jPass,
-    @required this.neo4jServer,
-    @required this.neo4jUser,
-    @required this.source,
+    required this.arguments,
+    required this.isHelp,
+    required this.isLocal,
+    required this.isSolved,
+    required this.neo4jPass,
+    required this.neo4jServer,
+    required this.neo4jUser,
+    required this.source,
   });
 
   factory Config.fromArgResults(ArgResults results) {

@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('PackageVersion', () {
-    Map<String, dynamic> json;
+    late Map<String, dynamic> json;
 
     setUp(() {
       json = {

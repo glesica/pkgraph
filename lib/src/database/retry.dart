@@ -15,15 +15,11 @@ final _logger = Logger('retry.dart');
 /// stack trace, along with the retries remaining so the behavior can
 /// be customized, but for now it's fine.
 Future<void> runWithRetry({
-  @required Future<void> operation(),
-  Future<void> onError(),
+  required Future<void> operation(),
+  Future<void> onError()?,
   int retries = 2,
   Duration waitAfter = const Duration(seconds: 5),
 }) async {
-  assert(operation != null);
-  assert(retries != null);
-  assert(waitAfter != null);
-
   for (var i = 0; i <= retries; i++) {
     final remaining = retries - i;
 

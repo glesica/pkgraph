@@ -1,4 +1,3 @@
-import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 /// A dependency specified by a given package version.
@@ -13,8 +12,8 @@ class Dependency {
   final String source;
 
   Dependency({
-    @required this.constraint,
-    @required this.packageName,
-    @required this.source,
+    required this.constraint,
+    required this.packageName,
+    required this.source,
   });
 }

@@ -3,7 +3,6 @@ import 'dart:convert' show json, utf8, base64;
 import 'dart:io';
 
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:pkgraph/src/database/query.dart';
 import 'package:pkgraph/src/database/retry.dart';
 
@@ -16,13 +15,13 @@ final _logger = Logger('database.dart');
 class Database {
   final String password;
   final Uri server;
-  final String username;
+  final String? username;
 
   Database({
-    @required this.server,
+    required this.server,
     this.password = '',
     this.username,
-  }) : assert(password != null);
+  });
 
   /// Open and immediately commit a transaction with the given query.
   ///
@@ -36,9 +35,9 @@ class Database {
 
     final uri = server.resolve(commitEndpoint);
 
-    String requestPayload;
-    HttpClientResponse response;
-    String responsePayload;
+    late String requestPayload;
+    late HttpClientResponse response;
+    late String responsePayload;
     dynamic responseJson;
     await runWithRetry(
       operation: () async {
@@ -93,10 +92,10 @@ class DbException implements Exception {
   final Uri uri;
 
   DbException({
-    @required this.response,
-    @required this.request,
-    @required this.statusCode,
-    @required this.uri,
+    required this.response,
+    required this.request,
+    required this.statusCode,
+    required this.uri,
   });
 
   @override
