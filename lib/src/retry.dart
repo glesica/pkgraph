@@ -1,5 +1,4 @@
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 
 /// Call a function and catch all errors, retrying a certain number of
 /// times.
@@ -22,20 +21,16 @@ import 'package:meta/meta.dart';
 /// result it receives is invalid or should otherwise cause a retry.
 ///
 /// `waitAfter` determines the time to wait before each retry.
-Future<T> runWithRetry<T>({
-  @required Future<T> operation(),
-  Logger logger,
-  Future<void> onError(),
-  Future<T> orElse(),
+Future<T?> runWithRetry<T>({
+  required Future<T> operation(),
+  Logger? logger,
+  Future<void> onError()?,
+  Future<T> orElse()?,
   int retries = 2,
-  Future<void> validate(T result),
+  Future<void> validate(T result)?,
   Duration waitAfter = const Duration(seconds: 5),
 }) async {
-  assert(operation != null);
-  assert(retries != null);
-  assert(waitAfter != null);
-
-  T result;
+  T? result;
 
   for (var i = 0; i <= retries; i++) {
     final remaining = retries - i;
@@ -44,7 +39,9 @@ Future<T> runWithRetry<T>({
       result = await operation();
 
       if (validate != null) {
-        await validate(result);
+        // We know result is not null here because it just came back from
+        // operation() and that can't return a null value.
+        await validate(result!);
       }
 
       break;

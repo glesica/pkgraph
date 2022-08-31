@@ -1,5 +1,4 @@
 import 'package:args/args.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 
 class Config {
@@ -18,12 +17,12 @@ class Config {
   final Iterable<String> sources;
 
   Config({
-    @required this.isHelp,
-    @required this.outputFormat,
-    @required this.packagePath,
-    @required postamble,
-    @required preamble,
-    @required this.sources,
+    required this.isHelp,
+    required this.outputFormat,
+    required this.packagePath,
+    required postamble,
+    required preamble,
+    required this.sources,
   })  : lockFilePath = path.absolute(
           path.normalize(
             path.join(

@@ -4,7 +4,7 @@ import 'package:pkgraph/src/database/statement.dart';
 
 void main() {
   group('Statement', () {
-    Statement statement;
+    late Statement statement;
 
     setUp(() {
       statement = Statement(statement: 'A');

@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 /// A single query that can be added to a request.
 class Statement {
   /// Query parameters.
@@ -10,7 +8,7 @@ class Statement {
   /// be rejected by the server.
   final String statement;
 
-  Statement({@required this.statement});
+  Statement({required this.statement});
 
   /// Retrieve a parameter value.
   dynamic operator [](String key) => parameters[key];

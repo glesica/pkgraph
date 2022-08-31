@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
@@ -17,12 +16,12 @@ class Package {
   final Version version;
 
   Package({
-    @required this.archiveUrl,
-    @required this.pubspec,
-    @required this.version,
+    required this.archiveUrl,
+    required this.pubspec,
+    required this.version,
   });
 
-  factory Package.fromJson(Map json) => _$PackageFromJson(json);
+  factory Package.fromJson(Map<String, dynamic> json) => _$PackageFromJson(json);
 }
 
 Uri _toUri(String url) => Uri.parse(url);

@@ -51,15 +51,13 @@ Statement packageVersionStatement(PackageVersion package) =>
 /// from the cache, it will throw.
 Iterable<Statement> packageDependenciesStatements(
   PackageVersion package, {
-  Cache cache,
+  Cache? cache,
 }) {
-  assert(package != null);
-
-  cache ??= defaultCache;
+  final theCache = cache ?? defaultCache;
 
   Iterable<Statement> statementsForDependency(Dependency dependency, bool dev) {
     // Filter package versions to only those that match the constraint.
-    final dependencyVersions = cache
+    final dependencyVersions = theCache
         .get(
           packageName: dependency.packageName,
           source: dependency.source,

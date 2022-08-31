@@ -13,7 +13,14 @@ import 'package:http/http.dart' as http;
 final _logger = Logger('Audit');
 
 class LicenseAudit {
-  final PubCache _cache;
+  final PubCache? _cache;
+
+  // IMPORTANT: Note that the four fields below, _dependencies,
+  // _licenses, and _names, and _packages must always have the same
+  // set of keys and must never be mutated in a way that will violate
+  // this invariant! When converting to null safety, the easiest
+  // route was to use assertions and they will hold only if the above
+  // invariant is never violated!
 
   final Map<String, SolvedDependency> _dependencies = {};
 
@@ -28,9 +35,9 @@ class LicenseAudit {
   final Set<String> _sources;
 
   LicenseAudit({
-    PubCache cache,
-    Iterable<String> sources,
-  })  : _cache = cache ?? PubCache.empty(),
+    PubCache? cache,
+    Iterable<String>? sources,
+  })  : _cache = cache,
         _sources = sources?.toSet() ?? Set<String>();
 
   Future<String> get asHtml async {
@@ -38,7 +45,7 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      final dependency = _dependencies[name];
+      final dependency = _dependencies[name]!;
       output += '<h2>$name ${dependency.version}</h2>\n';
       final license = _licenses[name];
       output += '<pre>$license</pre>\n\n';
@@ -52,7 +59,7 @@ class LicenseAudit {
 
     final jsonAudit = <String, Map<String, String>>{};
     _licenses.forEach((packageName, licenseText) {
-      final dependency = _dependencies[packageName];
+      final dependency = _dependencies[packageName]!;
       jsonAudit[packageName] = {
         'license': licenseText,
         'version': dependency.version.toString(),
@@ -67,9 +74,9 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      final dependency = _dependencies[name];
+      final dependency = _dependencies[name]!;
       output += '## $name ${dependency.version}\n';
-      final license = _licenses[name];
+      final license = _licenses[name]!;
       output += '```\n${license.trimRight()}\n```\n\n';
     }
 
@@ -81,7 +88,7 @@ class LicenseAudit {
 
     String output = '';
     for (final name in _names) {
-      final dependency = _dependencies[name];
+      final dependency = _dependencies[name]!;
       output += '$name ${dependency.version}\n';
       final license = _licenses[name];
       output += '$license\n\n';
@@ -116,7 +123,7 @@ class LicenseAudit {
       _dependencies[dependency.name] = dependency;
       _packages[dependency.name] = package;
 
-      final response = await runWithRetry(
+      final response = await runWithRetry<http.Response>(
         operation: () => http.get(package.archiveUrl),
         logger: _logger,
         validate: (response) async {
@@ -125,6 +132,10 @@ class LicenseAudit {
           }
         },
       );
+
+      if (response == null) {
+        continue;
+      }
 
       final tarBytes = archive.GZipDecoder().decodeBytes(response.bodyBytes);
       final tarArchive = archive.TarDecoder().decodeBytes(tarBytes);

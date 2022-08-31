@@ -44,9 +44,9 @@ class SolvedDependency {
   final Version version;
 
   SolvedDependency({
-    @required this.description,
-    @required this.type,
-    @required this.version,
+    required this.description,
+    required this.type,
+    required this.version,
   }) : sourceUri = Uri.parse(description.source);
 
   factory SolvedDependency.fromJson(Map<String, dynamic> json) =>
@@ -93,7 +93,7 @@ class Description {
   final String source;
 
   Description({
-    @required this.name,
-    @required this.source,
+    required this.name,
+    required this.source,
   });
 }

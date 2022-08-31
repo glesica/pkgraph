@@ -11,19 +11,19 @@ part 'package_version.g.dart';
 final _logger = Logger('package_version.dart');
 
 /// A model that represents a specific version of a particular package.
-@JsonSerializable(nullable: false)
+@JsonSerializable()
 class PackageVersion {
   /// A single author in the case where this key is used instead of
   /// the plural in the pubspec.
   ///
   /// TODO: Use this in place of the plural version if it is set
-  @JsonKey(defaultValue: '', nullable: true)
+  @JsonKey(defaultValue: '')
   final String author;
 
   /// The list of author strings for this version.
   ///
   /// TODO: Think about parsing the author strings themselves
-  @JsonKey(defaultValue: const [], nullable: true)
+  @JsonKey(defaultValue: const [])
   final Iterable<String> authors;
 
   /// The list of dependencies for this version.
@@ -38,19 +38,19 @@ class PackageVersion {
   final Iterable<Dependency> devDependencies;
 
   /// The URI of the package's homepage.
-  @JsonKey(nullable: true)
+  @JsonKey()
   final Uri homepage;
 
   /// Package name. Should not change across versions.
   final String name;
 
-  int _ordinal;
+  int? _ordinal;
 
   /// SDK version constraint required by this version of the package.
   @JsonKey(name: 'environment', fromJson: _toSdk)
   final VersionConstraint sdk;
 
-  String _source;
+  String? _source;
 
   /// The version of the package represented by this object.
   @JsonKey(fromJson: toVersion)
@@ -58,24 +58,24 @@ class PackageVersion {
 
   // TODO: It's unfortunate that we have to expose this publicly
   PackageVersion({
-    @required this.author,
-    @required this.authors,
-    @required this.dependencies,
-    @required this.description,
-    @required this.devDependencies,
-    @required this.homepage,
-    @required this.name,
-    int ordinal,
-    @required this.sdk,
-    String source,
-    @required this.version,
+    required this.author,
+    required this.authors,
+    required this.dependencies,
+    required this.description,
+    required this.devDependencies,
+    required this.homepage,
+    required this.name,
+    int? ordinal,
+    required this.sdk,
+    String? source,
+    required this.version,
   })  : _ordinal = ordinal,
         _source = source;
 
   factory PackageVersion.fromJson(
     Map<String, dynamic> json, {
-    @required int ordinal,
-    @required String source,
+    required int ordinal,
+    required String source,
   }) =>
       _$PackageVersionFromJson(json)
         .._ordinal = ordinal
@@ -104,12 +104,12 @@ class PackageVersion {
   /// This allows querying for version ranges in the database, where we
   /// can't properly interpret semantic versions otherwise.
   @JsonKey(ignore: true)
-  int get ordinal => _ordinal;
+  int? get ordinal => _ordinal;
 
   /// The pub server from whence this package came. This becomes a node
   /// in the graph to which the package version will be attached.
   @JsonKey(ignore: true)
-  String get source => _source;
+  String? get source => _source;
 
   @override
   String toString() => '$source/$name @ $version';
@@ -130,8 +130,8 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
     final entryKey = entry.key;
     final entryValue = entry.value;
 
-    String constraint;
-    String source;
+    String? constraint;
+    String? source;
 
     if (entryValue is Map<String, dynamic>) {
       if (entryValue.containsKey('version') &&
@@ -196,9 +196,9 @@ Iterable<Dependency> _toDependencies(Map<String, dynamic> value) {
     }
 
     dependencies.add(Dependency(
-      constraint: VersionConstraint.parse(constraint),
+      constraint: VersionConstraint.parse(constraint!),
       packageName: entryKey,
-      source: source,
+      source: source!,
     ));
   }
 

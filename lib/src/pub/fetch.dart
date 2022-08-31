@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:pkgraph/src/constants.dart';
 import 'package:pkgraph/src/models/package_version.dart';
@@ -21,11 +20,9 @@ final _logger = Logger('fetch.dart');
 
 Iterable<SolvedDependency> fetchLocalSolvedPackages(
   String packagePath, {
-  Cache cache,
+  Cache? cache,
 }) {
-  assert(packagePath != null);
-
-  cache ??= defaultCache;
+  final theCache = cache ?? defaultCache;
 
   final lockFilePath = path.join(packagePath, 'pubspec.lock');
   final pubspecContent = File(lockFilePath).readAsStringSync();
@@ -40,8 +37,8 @@ Iterable<SolvedDependency> fetchLocalSolvedPackages(
   // Make sure that the origin package is in the cache so that we
   // can grab it later when we add the solved relationships.
   final packageName = pathToPackageName(packagePath);
-  if (!cache.contains(packageName: packageName, source: localSource)) {
-    fetchLocalPackageVersions(packagePath, cache: cache);
+  if (!theCache.contains(packageName: packageName, source: localSource)) {
+    fetchLocalPackageVersions(packagePath, cache: theCache);
   }
 
   return solvedDependencies;
@@ -59,22 +56,22 @@ Iterable<SolvedDependency> fetchLocalSolvedPackages(
 /// TODO: Cache won't work right if someone else depends on the local package
 Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
   String packagePath, {
-  Cache cache,
+  Cache? cache,
 }) async {
   assert(packagePath != null);
 
-  cache ??= defaultCache;
+  final theCache = cache ?? defaultCache;
 
   // TODO: This won't work for special paths like "." and ".."
   final packageName = pathToPackageName(packagePath);
   final source = localSource;
 
-  if (cache.contains(
+  if (theCache.contains(
     packageName: packageName,
     source: source,
   )) {
     _logger.info('cache hit on $packageName from $source');
-    return cache.get(packageName: packageName, source: source);
+    return theCache.get(packageName: packageName, source: source);
   }
 
   // TODO: Provide better error handling for file operations
@@ -86,7 +83,7 @@ Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
   final packageVersion =
       PackageVersion.fromJson(pubspec, ordinal: 0, source: source);
 
-  cache.set(
+  theCache.set(
     packageName: packageName,
     source: source,
     packageVersions: [packageVersion],
@@ -101,20 +98,20 @@ Future<Iterable<PackageVersion>> fetchLocalPackageVersions(
 /// TODO: Use a `Uri` for the source instead of a string
 Future<Iterable<PackageVersion>> fetchPubPackageVersions(
   String packageName, {
-  Cache cache,
+  Cache? cache,
   String source = defaultSource,
 }) async {
   assert(packageName != null);
   assert(source != null);
 
-  cache ??= defaultCache;
+  final theCache = cache ?? defaultCache;
 
-  if (cache.contains(
+  if (theCache.contains(
     packageName: packageName,
     source: source,
   )) {
     _logger.info('cache hit on $packageName from $source');
-    return cache.get(packageName: packageName, source: source);
+    return theCache.get(packageName: packageName, source: source);
   }
 
   // Not sure what the rate limit looks like on the public pub server so
@@ -126,10 +123,11 @@ Future<Iterable<PackageVersion>> fetchPubPackageVersions(
 
   // Simple retry here since we just want to return an empty
   // list on a persistent failure, at least for now.
-  http.Response response;
+  late http.Response response;
   for (final attempt in const [1, 2, 3]) {
     _logger.fine('attempt $attempt to $url');
-    response = await http.get(url);
+    final uri = Uri.parse(url);
+    response = await http.get(uri);
     _logger.fine('response body from $url: ${response.body}');
 
     if (response.statusCode == 200) {
@@ -159,7 +157,7 @@ Future<Iterable<PackageVersion>> fetchPubPackageVersions(
     ));
   }
 
-  cache.set(
+  theCache.set(
     packageName: packageName,
     source: source,
     packageVersions: packageVersions,
@@ -180,15 +178,11 @@ Future<Iterable<PackageVersion>> fetchPubPackageVersions(
 /// also not include any version of package B.
 Future<void> populatePackagesCache(
   String originPackageNameOrPath, {
-  Cache cache,
+  Cache? cache,
   bool isLocalPackage = false,
   String source = defaultSource,
 }) async {
-  assert(originPackageNameOrPath != null);
-  assert(isLocalPackage != null);
-  assert(source != null);
-
-  cache ??= defaultCache;
+  final theCache = cache ?? defaultCache;
 
   final packageQueue = Queue.of([
     _QueuedPackage(
@@ -214,7 +208,7 @@ Future<void> populatePackagesCache(
         ? await fetchLocalPackageVersions(nextQueuedPackage.packageName)
         : await fetchPubPackageVersions(
             nextQueuedPackage.packageName,
-            cache: cache,
+            cache: theCache,
             source: nextQueuedPackage.source,
           );
 
@@ -240,7 +234,7 @@ Future<void> populatePackagesCache(
   // the pub server for whatever reason. Package versions that depend
   // on these packages won't solve anyway, so we don't include them
   // in our graph.
-  cache.prune(shouldPrune: (packageVersion) {
+  theCache.prune(shouldPrune: (packageVersion) {
     return packageVersion.allDependencies.any((dependency) {
       return emptyPackages.any((queuedPackage) {
         return dependency.packageName == queuedPackage.packageName &&
@@ -258,8 +252,8 @@ class _QueuedPackage {
 
   _QueuedPackage({
     this.isLocalPackage = false,
-    @required this.packageName,
-    @required this.source,
+    required this.packageName,
+    required this.source,
   }) : assert(isLocalPackage != null);
 
   @override
