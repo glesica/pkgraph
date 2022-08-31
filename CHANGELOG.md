@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+Upgrade dependencies and add null safety.
+
 ## 2.1.0
 
 Add initial license audit functionality.
